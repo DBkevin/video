@@ -1,0 +1,28 @@
+<view class="page">
+  <view class="card">
+    <view class="pill">顾客入口</view>
+    <view class="title">正在进入视频面诊</view>
+    <view class="subtitle">页面会自动完成微信登录、校验分享入口并加入候诊会话。</view>
+
+    <view class="section">
+      <view class="label">当前状态</view>
+      <view class="value">{{statusText}}</view>
+    </view>
+
+    <block wx:if="{{entry}}">
+      <view class="section">
+        <view class="label">会话编号</view>
+        <view class="value">{{entry.session_no}}</view>
+      </view>
+
+      <view class="section">
+        <view class="label">医生信息</view>
+        <view class="value">{{entry.doctor.name}} · {{entry.doctor.title}}</view>
+      </view>
+    </block>
+
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <button wx:if="{{errorMessage}}" class="button" bindtap="handleRetry">重新进入</button>
+  </view>
+</view>

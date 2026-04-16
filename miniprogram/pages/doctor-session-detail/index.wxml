@@ -1,0 +1,37 @@
+<view class="page">
+  <view class="card">
+    <view class="pill">医生端</view>
+    <view class="title">面诊会话详情</view>
+    <view class="subtitle">这里既可作为创建成功页，也可用于轮询顾客是否已加入并发起视频面诊。</view>
+
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <block wx:if="{{session}}">
+      <view class="section">
+        <view class="label">会话编号</view>
+        <view class="value">{{session.session_no}}</view>
+      </view>
+
+      <view class="section">
+        <view class="label">当前状态</view>
+        <view class="value">{{session.status}}</view>
+      </view>
+
+      <view class="section">
+        <view class="label">分享路径</view>
+        <view class="value">{{sharePath || '尚未生成分享入口'}}</view>
+      </view>
+
+      <view class="section">
+        <view class="label">顾客状态</view>
+        <view class="value">{{customer ? customer.nickname || customer.mobile : '顾客尚未加入'}}</view>
+      </view>
+    </block>
+
+    <button class="button secondary" loading="{{busyAction}}" bindtap="handleGenerateShare">生成分享入口</button>
+    <button class="button secondary" bindtap="handleCopySharePath">复制分享路径</button>
+    <button class="button" disabled="{{!canStart || busyAction}}" loading="{{busyAction}}" bindtap="handleStartConsult">进入视频面诊</button>
+
+    <view class="hint">页面会每 3 秒轮询一次会话状态，顾客加入后即可开始面诊。</view>
+  </view>
+</view>

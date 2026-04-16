@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "pages/customer-entry/index",
+    "pages/doctor-session-detail/index",
+    "pages/consult-room/index",
+    "pages/consult-finish/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "视频面诊",
+    "navigationBarBackgroundColor": "#f7f8fa",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f4f7fb",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="card">
+    <view class="pill">结束页</view>
+    <view class="title">本次面诊已结束</view>
+    <view class="subtitle">{{role === 'doctor' ? '面诊记录已提交，后续可继续扩展处方、随访等能力。' : '感谢使用视频面诊服务，请留意医生后续建议。'}}</view>
+
+    <view class="section" wx:if="{{session}}">
+      <view class="label">会话编号</view>
+      <view class="value">{{session.session_no}}</view>
+    </view>
+
+    <view class="section" wx:if="{{record}}">
+      <view class="label">接诊摘要</view>
+      <view class="value">{{record.summary || '本次未填写摘要'}}</view>
+    </view>
+
+    <view class="section" wx:if="{{record}}">
+      <view class="label">医生建议</view>
+      <view class="value">{{record.advice || '本次未填写建议'}}</view>
+    </view>
+
+    <button class="button secondary" bindtap="handleBackHome">返回上一页</button>
+  </view>
+</view>
