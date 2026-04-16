@@ -1,0 +1,12 @@
+{
+  "name": "video-consult-miniapp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "微信小程序视频面诊最小联调工程",
+  "scripts": {
+    "sync:tuicallkit": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-tuicallkit.ps1"
+  },
+  "dependencies": {
+    "@trtc/calls-uikit-wx": "^2.9.0"
+  }
+}

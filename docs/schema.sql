@@ -86,3 +86,26 @@ CREATE TABLE `consult_records` (
   CONSTRAINT `fk_consult_records_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `users` (`id`),
   CONSTRAINT `fk_consult_records_doctor_id` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='面诊记录表';
+
+CREATE TABLE `recording_tasks` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `session_id` BIGINT UNSIGNED NOT NULL COMMENT '面诊会话ID',
+  `task_id` VARCHAR(128) NOT NULL COMMENT 'TRTC录制任务ID',
+  `record_mode` VARCHAR(32) NOT NULL DEFAULT 'mixed' COMMENT '录制模式：mixed',
+  `storage_type` VARCHAR(32) NOT NULL DEFAULT 'vod' COMMENT '存储类型：vod',
+  `status` VARCHAR(32) NOT NULL DEFAULT 'recording' COMMENT '录制状态：recording/stopping/finished/failed',
+  `file_id` VARCHAR(128) NOT NULL DEFAULT '' COMMENT 'VOD文件ID',
+  `video_url` VARCHAR(1024) NOT NULL DEFAULT '' COMMENT '录制播放地址',
+  `file_name` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '录制文件名',
+  `started_at` DATETIME NULL DEFAULT NULL COMMENT '录制开始时间',
+  `ended_at` DATETIME NULL DEFAULT NULL COMMENT '录制结束时间',
+  `raw_callback` LONGTEXT NULL COMMENT '录制回调原始报文',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_recording_tasks_task_id` (`task_id`),
+  KEY `idx_recording_tasks_session_id` (`session_id`),
+  KEY `idx_recording_tasks_status` (`status`),
+  CONSTRAINT `fk_recording_tasks_session_id` FOREIGN KEY (`session_id`) REFERENCES `consult_sessions` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='TRTC云端录制任务表';

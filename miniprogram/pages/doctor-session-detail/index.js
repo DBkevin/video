@@ -9,7 +9,8 @@ Page({
     customer: null,
     canStart: false,
     sharePath: '',
-    busyAction: false
+    busyAction: false,
+    doctor: null
   },
 
   onLoad(options) {
@@ -44,9 +45,8 @@ Page({
 
     const doctorToken = this.getDoctorToken()
     if (!doctorToken) {
-      this.setData({
-        loading: false,
-        errorMessage: '缺少医生登录态。请先调用现有医生登录接口，并把 token 写入 storage: doctor_access_token。'
+      wx.reLaunch({
+        url: '/pages/doctor-login/index'
       })
       return
     }
@@ -59,8 +59,13 @@ Page({
         session: result.session,
         customer: result.customer,
         canStart: !!result.can_start,
-        sharePath: result.session.share_url_path || ''
+        sharePath: result.session.share_url_path || '',
+        doctor: auth.getDoctorProfile()
       })
+
+      if (result.session && ['finished', 'cancelled', 'expired'].indexOf(result.session.status) >= 0) {
+        this.stopPolling()
+      }
     } catch (err) {
       this.setData({
         loading: false,
@@ -101,6 +106,7 @@ Page({
         title: '分享入口已生成',
         icon: 'success'
       })
+      this.loadSession()
     } catch (err) {
       this.setData({
         errorMessage: err.message || '生成分享入口失败'
@@ -150,6 +156,33 @@ Page({
     } catch (err) {
       this.setData({
         errorMessage: err.message || '开始面诊失败'
+      })
+    } finally {
+      this.setData({ busyAction: false })
+    }
+  },
+
+  async handleCancelSession() {
+    const doctorToken = this.getDoctorToken()
+    if (!doctorToken || !this.sessionId) {
+      return
+    }
+
+    this.setData({ busyAction: true, errorMessage: '' })
+
+    try {
+      const result = await consult.cancelConsultSession(this.sessionId, doctorToken)
+      consult.saveFinishResult({
+        session: result.session,
+        record: null
+      })
+      this.stopPolling()
+      wx.redirectTo({
+        url: `/pages/consult-finish/index?sessionId=${result.session.id}&role=doctor&status=cancelled`
+      })
+    } catch (err) {
+      this.setData({
+        errorMessage: err.message || '取消会话失败'
       })
     } finally {
       this.setData({ busyAction: false })

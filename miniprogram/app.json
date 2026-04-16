@@ -1,9 +1,12 @@
 {
   "pages": [
+    "pages/doctor-login/index",
+    "pages/doctor-create-session/index",
     "pages/customer-entry/index",
     "pages/doctor-session-detail/index",
     "pages/consult-room/index",
-    "pages/consult-finish/index"
+    "pages/consult-finish/index",
+    "TUICallKit/pages/globalCall/globalCall"
   ],
   "window": {
     "navigationBarTitleText": "视频面诊",

@@ -1,0 +1,6 @@
+<view class="page">
+  <view class="placeholder-card">
+    <view class="title">官方 TUICallKit 尚未同步</view>
+    <view class="desc">请先在 miniprogram 目录执行 npm install、npm run sync:tuicallkit，并在微信开发者工具构建 npm。</view>
+  </view>
+</view>

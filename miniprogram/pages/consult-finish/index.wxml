@@ -1,12 +1,25 @@
 <view class="page">
   <view class="card">
     <view class="pill">结束页</view>
-    <view class="title">本次面诊已结束</view>
-    <view class="subtitle">{{role === 'doctor' ? '面诊记录已提交，后续可继续扩展处方、随访等能力。' : '感谢使用视频面诊服务，请留意医生后续建议。'}}</view>
+    <view class="title">
+      {{status === 'cancelled' ? '当前会话已取消' :
+        status === 'left' ? '你已离开当前会话' :
+        '本次面诊已结束'}}
+    </view>
+    <view class="subtitle">
+      {{status === 'cancelled' ? '医生端已主动关闭本次会话，分享入口和接诊流程会随之停止。' :
+        status === 'left' ? '本次离开结果已经回传服务端，如需继续面诊，可重新通过医生分享入口进入。' :
+        (role === 'doctor' ? '面诊记录已提交，后续可继续扩展处方、随访等能力。' : '感谢使用视频面诊服务，请留意医生后续建议。')}}
+    </view>
 
     <view class="section" wx:if="{{session}}">
       <view class="label">会话编号</view>
       <view class="value">{{session.session_no}}</view>
+    </view>
+
+    <view class="section" wx:if="{{session}}">
+      <view class="label">会话状态</view>
+      <view class="value">{{session.status}}</view>
     </view>
 
     <view class="section" wx:if="{{record}}">

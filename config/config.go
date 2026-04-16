@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	Server  ServerConfig
-	MySQL   MySQLConfig
-	Redis   RedisConfig
-	JWT     JWTConfig
-	TRTC    TRTCConfig
-	Consult ConsultConfig
-	WeChat  WeChatMiniProgramConfig
+	Server        ServerConfig
+	MySQL         MySQLConfig
+	Redis         RedisConfig
+	JWT           JWTConfig
+	TRTC          TRTCConfig
+	TRTCRecording TRTCRecordingConfig
+	Consult       ConsultConfig
+	WeChat        WeChatMiniProgramConfig
 }
 
 type ServerConfig struct {
@@ -42,6 +43,23 @@ type TRTCConfig struct {
 	SDKAppID        uint32
 	SecretKey       string
 	UserSigExpireIn int64
+}
+
+type TRTCRecordingConfig struct {
+	Enabled             bool
+	SecretID            string
+	SecretKey           string
+	Region              string
+	ResourceExpiredHour int64
+	MaxIdleTime         int64
+	MixWidth            int64
+	MixHeight           int64
+	MixFPS              int64
+	MixBitrate          int64
+	MixLayoutMode       int64
+	VODSubAppID         uint64
+	VODExpireTime       int64
+	CallbackURL         string
 }
 
 type ConsultConfig struct {
@@ -80,6 +98,22 @@ func Load() (*Config, error) {
 			SDKAppID:        uint32(getInt("TRTC_SDK_APP_ID", 0)),
 			SecretKey:       getString("TRTC_SECRET_KEY", ""),
 			UserSigExpireIn: getInt64("TRTC_USER_SIG_EXPIRE", 86400),
+		},
+		TRTCRecording: TRTCRecordingConfig{
+			Enabled:             getBool("TRTC_RECORDING_ENABLED", true),
+			SecretID:            getString("TRTC_RECORDING_SECRET_ID", ""),
+			SecretKey:           getString("TRTC_RECORDING_SECRET_KEY", ""),
+			Region:              getString("TRTC_RECORDING_REGION", "ap-shanghai"),
+			ResourceExpiredHour: getInt64("TRTC_RECORDING_RESOURCE_EXPIRED_HOUR", 72),
+			MaxIdleTime:         getInt64("TRTC_RECORDING_MAX_IDLE_TIME", 30),
+			MixWidth:            getInt64("TRTC_RECORDING_MIX_WIDTH", 720),
+			MixHeight:           getInt64("TRTC_RECORDING_MIX_HEIGHT", 1280),
+			MixFPS:              getInt64("TRTC_RECORDING_MIX_FPS", 15),
+			MixBitrate:          getInt64("TRTC_RECORDING_MIX_BITRATE", 1200),
+			MixLayoutMode:       getInt64("TRTC_RECORDING_MIX_LAYOUT_MODE", 3),
+			VODSubAppID:         getUint64("TRTC_RECORDING_VOD_SUB_APP_ID", 0),
+			VODExpireTime:       getInt64("TRTC_RECORDING_VOD_EXPIRE_TIME", 0),
+			CallbackURL:         getString("TRTC_RECORDING_CALLBACK_URL", ""),
 		},
 		Consult: ConsultConfig{
 			SessionExpireMinutes: getInt64("CONSULT_SESSION_EXPIRE_MINUTES", 120),
@@ -120,6 +154,32 @@ func getInt64(key string, fallback int64) int64 {
 	}
 
 	parsed, err := strconv.ParseInt(value, 10, 64)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getUint64(key string, fallback uint64) uint64 {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
+func getBool(key string, fallback bool) bool {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+
+	parsed, err := strconv.ParseBool(value)
 	if err != nil {
 		return fallback
 	}

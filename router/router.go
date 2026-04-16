@@ -27,15 +27,21 @@ func NewRouter(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *gin.Engine {
 	doctorRepo := repository.NewDoctorRepository(db)
 	sessionRepo := repository.NewConsultSessionRepository(db)
 	recordRepo := repository.NewConsultRecordRepository(db)
+	recordingTaskRepo := repository.NewRecordingTaskRepository(db)
 	miniProgramClient := wechat.NewMiniProgramClient(cfg.WeChat)
 
 	authService := service.NewAuthService(userRepo, doctorRepo, jwtManager, miniProgramClient)
 	rtcService := service.NewRTCService(cfg.TRTC, rdb)
-	consultService := service.NewConsultService(db, cfg.Consult, userRepo, doctorRepo, sessionRepo, recordRepo, rtcService)
+	recordingService, err := service.NewTRTCRecordingService(db, cfg.TRTC, cfg.TRTCRecording, recordingTaskRepo)
+	if err != nil {
+		panic(err)
+	}
+	consultService := service.NewConsultService(db, cfg.Consult, userRepo, doctorRepo, sessionRepo, recordRepo, rtcService, recordingService)
 
 	authController := controller.NewAuthController(authService)
 	consultController := controller.NewConsultController(consultService)
 	rtcController := controller.NewRTCController(rtcService)
+	recordingController := controller.NewRecordingController(recordingService)
 
 	engine.GET("/healthz", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
@@ -51,10 +57,13 @@ func NewRouter(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *gin.Engine {
 		rtcGroup := api.Group("/rtc", authMiddleware.Handle())
 		rtcGroup.POST("/usersig", rtcController.GenerateUserSig)
 
+		api.POST("/trtc/recording/callback", recordingController.HandleTRTCRecordingCallback)
+
 		api.GET("/consult-entry", consultController.GetConsultEntry)
 
 		userConsultGroup := api.Group("/consult-sessions", authMiddleware.Handle(), authMiddleware.RequireRole("user"))
 		userConsultGroup.POST("/:id/join", consultController.JoinConsultSession)
+		userConsultGroup.POST("/:id/leave", consultController.LeaveConsultSession)
 
 		doctorConsultGroup := api.Group("/consult-sessions", authMiddleware.Handle(), authMiddleware.RequireRole("doctor"))
 		doctorConsultGroup.POST("", consultController.CreateConsultSession)
@@ -62,6 +71,7 @@ func NewRouter(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *gin.Engine {
 		doctorConsultGroup.POST("/:id/share", consultController.ShareConsultSession)
 		doctorConsultGroup.POST("/:id/start", consultController.StartConsultSession)
 		doctorConsultGroup.POST("/:id/finish", consultController.FinishConsultSession)
+		doctorConsultGroup.POST("/:id/cancel", consultController.CancelConsultSession)
 	}
 
 	return engine

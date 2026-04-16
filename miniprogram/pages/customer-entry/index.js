@@ -58,6 +58,7 @@ Page({
     } catch (err) {
       this.setData({
         loading: false,
+        statusText: '进入失败',
         errorMessage: err.message || '进入面诊失败，请稍后重试'
       })
     }

@@ -11,13 +11,26 @@ Page({
     doctor: null,
     customer: null,
     sdkProvider: '',
-    finishLoading: false
+    finishLoading: false,
+    leaving: false,
+    statusText: '正在初始化通话环境...',
+    peerTitle: '',
+    peerName: ''
   },
 
   onLoad(options) {
     this.role = options.role || ''
     this.sessionId = Number(options.sessionId || 0)
+    this.hasHandledLeave = false
     this.bootstrap()
+  },
+
+  onUnload() {
+    if (this.data.role === 'customer' && !this.hasHandledLeave) {
+      this.performCustomerLeave(true)
+    } else {
+      tuicallkit.leaveConsultRoom()
+    }
   },
 
   async bootstrap() {
@@ -31,7 +44,12 @@ Page({
     }
 
     try {
+      const peerInfo = this.buildPeerInfo(runtime)
       const peerUserId = this.buildPeerUserID(runtime)
+      this.setData({
+        statusText: runtime.role === 'doctor' ? '正在初始化 TUICallKit 并发起视频呼叫...' : '正在初始化 TUICallKit，请保持当前页面等待医生接入...'
+      })
+
       const result = await tuicallkit.enterConsultRoom({
         sdkAppId: runtime.rtc.sdk_app_id,
         rtcUserId: runtime.rtc.rtc_user_id,
@@ -40,7 +58,7 @@ Page({
         role: runtime.role,
         peerUserId,
         displayName: runtime.role === 'doctor'
-          ? '医生'
+          ? ((runtime.doctor && runtime.doctor.name) || '医生')
           : '顾客',
         avatarUrl: runtime.role === 'customer'
           ? ''
@@ -53,7 +71,12 @@ Page({
         session: runtime.session,
         doctor: runtime.doctor || null,
         customer: runtime.customer || null,
-        sdkProvider: result.provider
+        sdkProvider: result.provider,
+        statusText: runtime.role === 'doctor'
+          ? '医生端已发起视频呼叫，请关注顾客接听状态。'
+          : '顾客端已完成 TUICallKit 初始化，正在等待医生发起呼叫。',
+        peerTitle: peerInfo.title,
+        peerName: peerInfo.name
       })
     } catch (err) {
       this.setData({
@@ -79,6 +102,20 @@ Page({
     return ''
   },
 
+  buildPeerInfo(runtime) {
+    if (runtime.role === 'doctor') {
+      return {
+        title: '顾客信息',
+        name: runtime.customer ? (runtime.customer.nickname || runtime.customer.mobile || '顾客已加入') : '顾客尚未加入'
+      }
+    }
+
+    return {
+      title: '医生信息',
+      name: runtime.doctor ? `${runtime.doctor.name || '医生'} · ${runtime.doctor.title || '待补充职称'}` : '医生信息加载中'
+    }
+  },
+
   async handleFinishConsult() {
     const doctorToken = auth.getDoctorToken()
     if (!doctorToken || !this.sessionId) {
@@ -94,6 +131,7 @@ Page({
       const result = await consult.finishConsultSession(this.sessionId, doctorToken)
       consult.saveFinishResult(result)
       consult.clearConsultRuntime()
+      this.hasHandledLeave = true
       await tuicallkit.leaveConsultRoom()
 
       wx.redirectTo({
@@ -109,9 +147,59 @@ Page({
   },
 
   async handleLeavePage() {
-    await tuicallkit.leaveConsultRoom()
+    await this.performCustomerLeave(false)
+  },
+
+  async performCustomerLeave(silent) {
+    if (this.hasHandledLeave) {
+      return
+    }
+
+    this.hasHandledLeave = true
+    const userToken = auth.getUserToken()
+
+    if (!silent) {
+      this.setData({
+        leaving: true,
+        errorMessage: '',
+        statusText: '正在离开当前会话...'
+      })
+    }
+
+    try {
+      if (userToken && this.sessionId) {
+        const result = await consult.leaveConsultSession(this.sessionId, userToken)
+        consult.saveFinishResult({
+          session: result.session,
+          record: null
+        })
+      }
+    } catch (err) {
+      if (!silent) {
+        this.setData({
+          errorMessage: err.message || '离开会话失败'
+        })
+      }
+    }
+
+    try {
+      await tuicallkit.leaveConsultRoom()
+    } catch (err) {
+      // SDK 退出失败不阻断页面关闭流程。
+    }
+
+    consult.clearConsultRuntime()
+
+    if (!silent) {
+      wx.redirectTo({
+        url: `/pages/consult-finish/index?sessionId=${this.sessionId || 0}&role=${this.data.role || ''}&status=left`
+      })
+    }
+  },
+
+  handleBackToDoctorDetail() {
     wx.redirectTo({
-      url: `/pages/consult-finish/index?sessionId=${this.sessionId || 0}&role=${this.data.role || ''}`
+      url: `/pages/doctor-session-detail/index?id=${this.sessionId || 0}`
     })
   }
 })

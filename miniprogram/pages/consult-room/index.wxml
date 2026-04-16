@@ -2,10 +2,10 @@
   <view class="card">
     <view class="pill">{{role === 'doctor' ? '医生通话页' : '顾客候诊页'}}</view>
     <view class="title">{{role === 'doctor' ? '正在发起视频面诊' : '已进入候诊，等待医生接入'}}</view>
-    <view class="subtitle">页面会优先尝试初始化 TUICallKit；如果本地还未安装官方 SDK，则会自动切到 mock 模式方便先联调接口。</view>
+    <view class="subtitle">页面会直接接入官方 TUICallKit。医生端进入后会发起视频呼叫，顾客端进入后会保持在线等待接听。</view>
 
     <view wx:if="{{loading}}" class="section">
-      <view class="value">正在初始化通话环境...</view>
+      <view class="value">{{statusText}}</view>
     </view>
 
     <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
@@ -26,18 +26,29 @@
         <view class="value">{{sdkProvider || '初始化中'}}</view>
       </view>
 
-      <view class="section" wx:if="{{doctor}}">
-        <view class="label">医生信息</view>
-        <view class="value">{{doctor.name}} · {{doctor.title}}</view>
+      <view class="section">
+        <view class="label">当前角色</view>
+        <view class="value">{{role === 'doctor' ? '医生' : '顾客'}}</view>
       </view>
 
-      <view class="section" wx:if="{{customer}}">
-        <view class="label">顾客信息</view>
-        <view class="value">{{customer.nickname || customer.mobile}}</view>
+      <view class="section">
+        <view class="label">会话状态</view>
+        <view class="value">{{session.status}}</view>
+      </view>
+
+      <view class="section">
+        <view class="label">{{peerTitle}}</view>
+        <view class="value">{{peerName}}</view>
+      </view>
+
+      <view class="section" wx:if="{{statusText}}">
+        <view class="label">通话提示</view>
+        <view class="value">{{statusText}}</view>
       </view>
     </block>
 
     <button wx:if="{{role === 'doctor'}}" class="button warn" loading="{{finishLoading}}" bindtap="handleFinishConsult">结束面诊</button>
-    <button wx:if="{{role !== 'doctor'}}" class="button secondary" bindtap="handleLeavePage">离开当前页面</button>
+    <button wx:if="{{role === 'doctor'}}" class="button secondary" bindtap="handleBackToDoctorDetail">返回会话详情</button>
+    <button wx:if="{{role !== 'doctor'}}" class="button secondary" loading="{{leaving}}" bindtap="handleLeavePage">离开当前页面</button>
   </view>
 </view>

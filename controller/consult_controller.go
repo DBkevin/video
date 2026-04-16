@@ -169,6 +169,50 @@ func (ctl *ConsultController) FinishConsultSession(c *gin.Context) {
 	response.Success(c, fallbackMessage(result.Message, "结束面诊成功"), result)
 }
 
+func (ctl *ConsultController) CancelConsultSession(c *gin.Context) {
+	claims, ok := middleware.GetClaims(c)
+	if !ok {
+		response.Unauthorized(c, "登录状态无效")
+		return
+	}
+
+	sessionID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "会话ID不合法")
+		return
+	}
+
+	result, err := ctl.consultService.CancelConsultSession(c.Request.Context(), sessionID, claims.UserID)
+	if err != nil {
+		writeServiceError(c, err)
+		return
+	}
+
+	response.Success(c, fallbackMessage(result.Message, "会话取消成功"), result)
+}
+
+func (ctl *ConsultController) LeaveConsultSession(c *gin.Context) {
+	claims, ok := middleware.GetClaims(c)
+	if !ok {
+		response.Unauthorized(c, "登录状态无效")
+		return
+	}
+
+	sessionID, err := strconv.ParseUint(c.Param("id"), 10, 64)
+	if err != nil {
+		response.BadRequest(c, "会话ID不合法")
+		return
+	}
+
+	result, err := ctl.consultService.LeaveConsultSession(c.Request.Context(), sessionID, claims.UserID)
+	if err != nil {
+		writeServiceError(c, err)
+		return
+	}
+
+	response.Success(c, fallbackMessage(result.Message, "离开会话成功"), result)
+}
+
 func fallbackMessage(current, fallback string) string {
 	if current != "" {
 		return current

@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="card">
+    <view class="pill">医生端入口</view>
+    <view class="title">登录后创建视频面诊会话</view>
+    <view class="subtitle">本页面用于真机联调医生端最小入口。登录成功后会把 doctor_access_token 写入 storage，并跳转到创建会话页。</view>
+
+    <view class="section">
+      <view class="label">医生工号</view>
+      <input class="form-input" placeholder="请输入医生工号" value="{{employeeNo}}" bindinput="handleEmployeeNoInput" />
+    </view>
+
+    <view class="section">
+      <view class="label">登录密码</view>
+      <input class="form-input" password placeholder="请输入登录密码" value="{{password}}" bindinput="handlePasswordInput" />
+    </view>
+
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <button class="button" loading="{{loading}}" bindtap="handleLogin">登录并进入创建页</button>
+  </view>
+</view>

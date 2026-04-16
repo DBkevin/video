@@ -1,0 +1,22 @@
+<view class="page">
+  <view class="card">
+    <view class="pill">创建入口</view>
+    <view class="title">医生创建一次新会话</view>
+    <view class="subtitle">创建成功后会直接跳转到会话详情页，你可以在那里生成分享入口、等待顾客加入并开始视频面诊。</view>
+
+    <view class="section" wx:if="{{doctor}}">
+      <view class="label">当前医生</view>
+      <view class="value">{{doctor.name}} · {{doctor.title}}</view>
+    </view>
+
+    <view class="section">
+      <view class="label">入口有效时长（分钟）</view>
+      <input class="form-input" type="number" value="{{expireMinutes}}" bindinput="handleExpireInput" />
+    </view>
+
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <button class="button" loading="{{loading}}" bindtap="handleCreateSession">创建会话</button>
+    <button class="button secondary" bindtap="handleLogout">退出医生登录</button>
+  </view>
+</view>

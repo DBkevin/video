@@ -2,3 +2,14 @@
 .gocache/
 .gomodcache/
 *.exe
+miniprogram/node_modules/
+miniprogram/miniprogram_npm/
+miniprogram/static/
+miniprogram/TUICallKit/*
+!miniprogram/TUICallKit/README.md
+!miniprogram/TUICallKit/pages/
+!miniprogram/TUICallKit/pages/globalCall/
+!miniprogram/TUICallKit/pages/globalCall/globalCall.js
+!miniprogram/TUICallKit/pages/globalCall/globalCall.json
+!miniprogram/TUICallKit/pages/globalCall/globalCall.wxml
+!miniprogram/TUICallKit/pages/globalCall/globalCall.wxss

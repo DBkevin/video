@@ -84,10 +84,13 @@ type GetConsultEntryResult struct {
 }
 
 type GetConsultSessionResult struct {
-	Session  *model.ConsultSession `json:"session"`
-	Customer *CustomerBasicInfo    `json:"customer,omitempty"`
-	CanStart bool                  `json:"can_start"`
-	Message  string                `json:"-"`
+	Session        *model.ConsultSession `json:"session"`
+	Customer       *CustomerBasicInfo    `json:"customer,omitempty"`
+	CanStart       bool                  `json:"can_start"`
+	RecordStatus   string                `json:"record_status"`
+	RecordVideoURL string                `json:"record_video_url"`
+	RecordFileID   string                `json:"record_file_id"`
+	Message        string                `json:"-"`
 }
 
 type JoinConsultSessionResult struct {
@@ -112,14 +115,26 @@ type FinishConsultSessionResult struct {
 	Message string                `json:"-"`
 }
 
+type CancelConsultSessionResult struct {
+	Session *model.ConsultSession `json:"session"`
+	Message string                `json:"-"`
+}
+
+type LeaveConsultSessionResult struct {
+	Session   *model.ConsultSession `json:"session"`
+	CanRejoin bool                  `json:"can_rejoin"`
+	Message   string                `json:"-"`
+}
+
 type ConsultService struct {
-	db          *gorm.DB
-	cfg         config.ConsultConfig
-	userRepo    *repository.UserRepository
-	doctorRepo  *repository.DoctorRepository
-	sessionRepo *repository.ConsultSessionRepository
-	recordRepo  *repository.ConsultRecordRepository
-	rtcService  *RTCService
+	db               *gorm.DB
+	cfg              config.ConsultConfig
+	userRepo         *repository.UserRepository
+	doctorRepo       *repository.DoctorRepository
+	sessionRepo      *repository.ConsultSessionRepository
+	recordRepo       *repository.ConsultRecordRepository
+	rtcService       *RTCService
+	recordingService *TRTCRecordingService
 }
 
 func NewConsultService(
@@ -130,15 +145,17 @@ func NewConsultService(
 	sessionRepo *repository.ConsultSessionRepository,
 	recordRepo *repository.ConsultRecordRepository,
 	rtcService *RTCService,
+	recordingService *TRTCRecordingService,
 ) *ConsultService {
 	return &ConsultService{
-		db:          db,
-		cfg:         cfg,
-		userRepo:    userRepo,
-		doctorRepo:  doctorRepo,
-		sessionRepo: sessionRepo,
-		recordRepo:  recordRepo,
-		rtcService:  rtcService,
+		db:               db,
+		cfg:              cfg,
+		userRepo:         userRepo,
+		doctorRepo:       doctorRepo,
+		sessionRepo:      sessionRepo,
+		recordRepo:       recordRepo,
+		rtcService:       rtcService,
+		recordingService: recordingService,
 	}
 }
 
@@ -303,11 +320,19 @@ func (s *ConsultService) GetConsultSession(ctx context.Context, sessionID, docto
 		return nil, err
 	}
 
+	recordInfo, err := s.safeGetRecordingInfo(ctx, session.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	return &GetConsultSessionResult{
-		Session:  session,
-		Customer: buildCustomerBasicInfo(session.CustomerID, &session.Customer),
-		CanStart: session.Status == model.ConsultSessionStatusJoined,
-		Message:  "会话信息获取成功",
+		Session:        session,
+		Customer:       buildCustomerBasicInfo(session.CustomerID, &session.Customer),
+		CanStart:       session.Status == model.ConsultSessionStatusJoined,
+		RecordStatus:   recordInfo.Status,
+		RecordVideoURL: recordInfo.VideoURL,
+		RecordFileID:   recordInfo.FileID,
+		Message:        "会话信息获取成功",
 	}, nil
 }
 
@@ -371,9 +396,16 @@ func (s *ConsultService) JoinConsultSession(ctx context.Context, sessionID, cust
 
 		switch session.Status {
 		case model.ConsultSessionStatusShared:
+			if session.CustomerID != nil && *session.CustomerID == customerID {
+				message = "已重新进入候诊会话，请等待医生开始面诊"
+			}
 			session.Status = model.ConsultSessionStatusJoined
 		case model.ConsultSessionStatusJoined:
-			message = "已返回当前候诊会话，可继续等待医生接入"
+			if session.StartedAt != nil {
+				message = "已重新进入当前面诊，请等待医生重新接入"
+			} else {
+				message = "已返回当前候诊会话，可继续等待医生接入"
+			}
 		case model.ConsultSessionStatusInConsult:
 			message = "已返回当前通话会话，可直接继续面诊"
 		}
@@ -473,7 +505,7 @@ func (s *ConsultService) StartConsultSession(ctx context.Context, sessionID, doc
 		RTC:         rtcInfo,
 		CurrentRole: "doctor",
 		Customer:    buildCustomerBasicInfo(session.CustomerID, &session.Customer),
-		Message:     message,
+		Message:     s.startRecordingAfterConsultStart(ctx, session, message),
 	}, nil
 }
 
@@ -568,7 +600,136 @@ func (s *ConsultService) FinishConsultSession(ctx context.Context, sessionID, do
 	return &FinishConsultSessionResult{
 		Session: session,
 		Record:  record,
-		Message: resultMessage,
+		Message: s.stopRecordingAfterConsultFinish(ctx, session, resultMessage),
+	}, nil
+}
+
+func (s *ConsultService) CancelConsultSession(ctx context.Context, sessionID, doctorID uint64) (*CancelConsultSessionResult, error) {
+	var (
+		session *model.ConsultSession
+		message = "会话已取消"
+	)
+
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		sessionRepo := s.sessionRepo.WithDB(tx)
+
+		var err error
+		session, err = sessionRepo.GetByIDForUpdate(sessionID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return NewBizError(http.StatusNotFound, "面诊会话不存在")
+			}
+			return err
+		}
+
+		if session.DoctorID != doctorID {
+			return NewBizError(http.StatusForbidden, "当前医生无权取消该会话")
+		}
+
+		if err := s.touchSessionExpired(sessionRepo, session); err != nil {
+			return err
+		}
+
+		switch session.Status {
+		case model.ConsultSessionStatusFinished:
+			return NewBizError(http.StatusBadRequest, "当前会话已结束，不能取消")
+		case model.ConsultSessionStatusExpired:
+			return NewBizError(http.StatusGone, "当前会话已过期，无需取消")
+		case model.ConsultSessionStatusCancelled:
+			message = "会话已取消，已返回当前结果"
+			return nil
+		}
+
+		now := time.Now()
+		session.Status = model.ConsultSessionStatusCancelled
+		if session.EndedAt == nil {
+			session.EndedAt = &now
+		}
+
+		return HandleDBError(sessionRepo.Update(session), "取消会话失败，请稍后重试")
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	detail, err := s.sessionRepo.WithDB(s.db.WithContext(ctx)).GetByID(sessionID)
+	if err == nil {
+		session = detail
+	}
+
+	return &CancelConsultSessionResult{
+		Session: session,
+		Message: message,
+	}, nil
+}
+
+func (s *ConsultService) LeaveConsultSession(ctx context.Context, sessionID, customerID uint64) (*LeaveConsultSessionResult, error) {
+	var (
+		session   *model.ConsultSession
+		message   = "已离开当前会话"
+		canRejoin = true
+	)
+
+	err := s.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		sessionRepo := s.sessionRepo.WithDB(tx)
+
+		var err error
+		session, err = sessionRepo.GetByIDForUpdate(sessionID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return NewBizError(http.StatusNotFound, "面诊会话不存在")
+			}
+			return err
+		}
+
+		if session.CustomerID == nil || *session.CustomerID != customerID {
+			return NewBizError(http.StatusForbidden, "当前顾客无权离开该会话")
+		}
+
+		if err := s.touchSessionExpired(sessionRepo, session); err != nil {
+			return err
+		}
+
+		switch session.Status {
+		case model.ConsultSessionStatusCreated, model.ConsultSessionStatusShared:
+			return NewBizError(http.StatusBadRequest, "当前会话尚未进入候诊，无需离开")
+		case model.ConsultSessionStatusExpired:
+			message = "会话已过期，请联系医生重新分享入口"
+			canRejoin = false
+			return nil
+		case model.ConsultSessionStatusCancelled:
+			message = "会话已取消，已返回当前结果"
+			canRejoin = false
+			return nil
+		case model.ConsultSessionStatusFinished:
+			message = "会话已结束，已返回当前结果"
+			canRejoin = false
+			return nil
+		case model.ConsultSessionStatusJoined:
+			// 顾客离开候诊页后，把会话恢复为 shared，医生端能看到顾客暂时离线，顾客也能用原入口重新进入。
+			session.Status = model.ConsultSessionStatusShared
+			message = "已离开候诊，稍后可通过原分享入口重新进入"
+		case model.ConsultSessionStatusInConsult:
+			// 通话中离开页面时回退到 joined，表示会话仍有效，但需要医生重新发起接入。
+			session.Status = model.ConsultSessionStatusJoined
+			message = "已离开当前通话，请重新进入并等待医生再次发起"
+		}
+
+		return HandleDBError(sessionRepo.Update(session), "离开会话失败，请稍后重试")
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	detail, err := s.sessionRepo.WithDB(s.db.WithContext(ctx)).GetByID(sessionID)
+	if err == nil {
+		session = detail
+	}
+
+	return &LeaveConsultSessionResult{
+		Session:   session,
+		CanRejoin: canRejoin,
+		Message:   message,
 	}, nil
 }
 
@@ -640,6 +801,38 @@ func (s *ConsultService) buildRTCInfo(ctx context.Context, roomID int32, rtcUser
 	}, nil
 }
 
+func (s *ConsultService) safeGetRecordingInfo(ctx context.Context, sessionID uint64) (*RecordingInfo, error) {
+	if s.recordingService == nil {
+		return &RecordingInfo{}, nil
+	}
+
+	return s.recordingService.GetRecordingInfo(ctx, sessionID)
+}
+
+func (s *ConsultService) startRecordingAfterConsultStart(ctx context.Context, session *model.ConsultSession, successMessage string) string {
+	if s.recordingService == nil || session == nil {
+		return successMessage
+	}
+
+	if _, err := s.recordingService.StartRecording(ctx, session); err != nil {
+		return fmt.Sprintf("%s，但云端录制启动失败：%s", successMessage, err.Error())
+	}
+
+	return fmt.Sprintf("%s，已自动启动云端录制", successMessage)
+}
+
+func (s *ConsultService) stopRecordingAfterConsultFinish(ctx context.Context, session *model.ConsultSession, successMessage string) string {
+	if s.recordingService == nil || session == nil {
+		return successMessage
+	}
+
+	if _, err := s.recordingService.StopRecording(ctx, session); err != nil {
+		return fmt.Sprintf("%s，但录制停止请求失败：%s", successMessage, err.Error())
+	}
+
+	return fmt.Sprintf("%s，已发送录制停止请求", successMessage)
+}
+
 func (s *ConsultService) calculateDurationSeconds(session *model.ConsultSession, endedAt time.Time, requestedDuration int64) int64 {
 	if requestedDuration > 0 {
 		return requestedDuration
@@ -683,7 +876,7 @@ func buildCustomerBasicInfo(customerID *uint64, user *model.User) *CustomerBasic
 func buildShareURLPath(pagePath, token string) string {
 	pagePath = strings.TrimSpace(pagePath)
 	if pagePath == "" {
-		pagePath = "/pages/consult/customer-entry/index"
+		pagePath = "/pages/customer-entry/index"
 	}
 
 	separator := "?"

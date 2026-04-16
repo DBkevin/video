@@ -19,5 +19,6 @@ func AutoMigrate(db *gorm.DB) error {
 			&model.Doctor{},
 			&model.ConsultSession{},
 			&model.ConsultRecord{},
+			&model.RecordingTask{},
 		)
 }

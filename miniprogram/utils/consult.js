@@ -3,6 +3,17 @@ const { request } = require('./request')
 const CONSULT_RUNTIME_KEY = 'consult_runtime_payload'
 const LAST_FINISH_RESULT_KEY = 'consult_last_finish_result'
 
+function createConsultSession(accessToken, expireMinutes = 120) {
+  return request({
+    url: '/consult-sessions',
+    method: 'POST',
+    token: accessToken,
+    data: {
+      expire_minutes: expireMinutes
+    }
+  })
+}
+
 function getConsultEntry(shareToken) {
   return request({
     url: `/consult-entry?token=${encodeURIComponent(shareToken)}`
@@ -55,6 +66,22 @@ function finishConsultSession(sessionId, accessToken, payload = {}) {
   })
 }
 
+function cancelConsultSession(sessionId, accessToken) {
+  return request({
+    url: `/consult-sessions/${sessionId}/cancel`,
+    method: 'POST',
+    token: accessToken
+  })
+}
+
+function leaveConsultSession(sessionId, accessToken) {
+  return request({
+    url: `/consult-sessions/${sessionId}/leave`,
+    method: 'POST',
+    token: accessToken
+  })
+}
+
 function saveConsultRuntime(payload) {
   wx.setStorageSync(CONSULT_RUNTIME_KEY, payload || null)
 }
@@ -84,12 +111,15 @@ function buildCustomerRTCUserID(sessionId, customerId) {
 }
 
 module.exports = {
+  createConsultSession,
   getConsultEntry,
   joinConsultSession,
   getConsultSession,
   shareConsultSession,
   startConsultSession,
   finishConsultSession,
+  cancelConsultSession,
+  leaveConsultSession,
   saveConsultRuntime,
   getConsultRuntime,
   clearConsultRuntime,

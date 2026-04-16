@@ -7,6 +7,7 @@
 - 顾客通过 `share_token` 打开入口并加入会话
 - 医生开始面诊，双方进入同一个 TRTC 房间
 - 医生结束面诊，并保存面诊记录
+- 面诊开始后自动启动 TRTC 云端录制，录制文件上传到 VOD
 
 ## 快速开始
 
@@ -66,6 +67,60 @@ go run ./cmd/server
   - 医生 `start` 时，后端会临时生成当前会话专属的 `rtc_user_id / userSig / room_id`
 - 小程序侧已新增 `miniprogram/utils/tuicallkit.js` 适配层，优先兼容最新版 `@trtc/calls-uikit-wx`，同时兼容旧版包名
 
+## TRTC 云端录制
+
+第五阶段已新增“视频默认保存”能力，当前实现采用：
+
+- TRTC 手动录制 API
+- 默认优先合流录制
+- 存储到 VOD
+- 通过回调落库 `file_id / video_url / file_name`
+- 录制任务与 `consult_sessions` 一对多关联，保存在 `recording_tasks`
+
+当前录制链路：
+
+1. 医生调用 `POST /api/v1/consult-sessions/:id/start`
+2. 后端把会话切到 `in_consult`
+3. 后端自动调用 TRTC `CreateCloudRecording`
+4. 医生调用 `POST /api/v1/consult-sessions/:id/finish`
+5. 后端自动调用 TRTC `DeleteCloudRecording`
+6. 腾讯云回调 `POST /api/v1/trtc/recording/callback`
+7. 后端更新 `recording_tasks.file_id / video_url / raw_callback`
+
+录制说明：
+
+- 如果录制启动失败，不会打断已开始的会话，但返回消息会明确提示“录制启动失败”
+- 如果录制停止失败，不会回滚已结束的会话；医生可继续通过会话详情查看 `record_status`
+- 医生查看 `GET /api/v1/consult-sessions/:id` 时，可直接拿到：
+  - `record_status`
+  - `record_video_url`
+  - `record_file_id`
+
+## 录制配置项
+
+`.env.example` 已补充以下关键配置：
+
+- `TRTC_RECORDING_ENABLED`
+- `TRTC_RECORDING_SECRET_ID`
+- `TRTC_RECORDING_SECRET_KEY`
+- `TRTC_RECORDING_REGION`
+- `TRTC_RECORDING_RESOURCE_EXPIRED_HOUR`
+- `TRTC_RECORDING_MAX_IDLE_TIME`
+- `TRTC_RECORDING_MIX_WIDTH`
+- `TRTC_RECORDING_MIX_HEIGHT`
+- `TRTC_RECORDING_MIX_FPS`
+- `TRTC_RECORDING_MIX_BITRATE`
+- `TRTC_RECORDING_MIX_LAYOUT_MODE`
+- `TRTC_RECORDING_VOD_SUB_APP_ID`
+- `TRTC_RECORDING_VOD_EXPIRE_TIME`
+- `TRTC_RECORDING_CALLBACK_URL`
+
+注意：
+
+- `TRTC_RECORDING_SECRET_ID / TRTC_RECORDING_SECRET_KEY` 是腾讯云 API 密钥，不是 `TRTC_SECRET_KEY`
+- `TRTC_SECRET_KEY` 只用于生成 TRTC `userSig`
+- `TRTC_RECORDING_CALLBACK_URL` 需要在腾讯云 TRTC 录制回调配置中指向你的服务地址，例如 `https://api.example.com/api/v1/trtc/recording/callback`
+
 ## 面诊会话流程
 
 1. 医生调用 `POST /api/v1/consult-sessions` 创建会话
@@ -119,6 +174,7 @@ go run ./cmd/server
 - `doctors`
 - `consult_sessions`
 - `consult_records`
+- `recording_tasks`
 
 完整设计见 [docs/schema.sql](docs/schema.sql)。
 

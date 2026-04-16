@@ -101,6 +101,12 @@
 - 判断顾客是否已加入
 - 判断是否可以开始面诊
 
+返回字段新增：
+
+- `record_status`
+- `record_video_url`
+- `record_file_id`
+
 ### 3. 医生生成分享入口
 
 - `POST /consult-sessions/:id/share`
@@ -123,6 +129,7 @@
 
 - 分享参数中不会直接包含 `userSig`
 - 重复分享会生成新的 `share_token`，旧 token 自动失效
+- 如果分享链接过期，顾客打开入口会收到明确提示“分享入口已过期，请联系医生重新分享”
 
 ### 4. 顾客通过 token 获取入口信息
 
@@ -190,8 +197,30 @@
 - 只有顾客已加入的 `joined` 状态，才能进入 `start`
 - `start` 后状态切为 `in_consult`
 - 小程序医生端可在 start 成功后初始化 TUICallKit，并向顾客发起视频通话
+- 接口成功后会自动调用 TRTC 云端手动录制，默认采用合流录制并写入 VOD
 
-### 7. 医生结束面诊
+### 7. 医生取消会话
+
+- `POST /consult-sessions/:id/cancel`
+
+说明：
+
+- 仅医生可调用
+- 会把当前会话状态置为 `cancelled`
+- 已取消会话再次调用会幂等返回当前结果
+
+### 8. 顾客离开会话
+
+- `POST /consult-sessions/:id/leave`
+
+说明：
+
+- 仅顾客可调用
+- 顾客离开候诊页时，会把状态从 `joined` 回退到 `shared`
+- 顾客在通话中离开页面时，会把状态从 `in_consult` 回退到 `joined`
+- 该接口用于处理小程序页面关闭、异常返回、用户主动离开等情况
+
+### 9. 医生结束面诊
 
 - `POST /consult-sessions/:id/finish`
 
@@ -210,6 +239,19 @@
 
 - 会写入 `consult_records`
 - 已结束会话再次调用会幂等返回当前结果，不会重复创建记录
+- 接口成功后会自动发送 TRTC 录制停止请求，录制文件通过回调异步回写
+
+## TRTC 录制回调
+
+### 10. 接收云端录制回调
+
+- `POST /trtc/recording/callback`
+
+说明：
+
+- 该接口供腾讯云 TRTC 录制回调调用，不需要业务登录态
+- 收到上传完成事件后，后端会把 `file_id / video_url / file_name` 写入 `recording_tasks`
+- `raw_callback` 会原样保存在数据库，便于后续排查回调与录制问题
 
 ## 小程序最小接入链路
 
@@ -224,10 +266,14 @@
 
 ### 医生链路
 
-1. 医生打开 `/pages/doctor-session-detail/index?id={sessionId}`
-2. 轮询 `GET /consult-sessions/:id` 查看顾客是否已加入
-3. 点击“生成分享入口”调用 `POST /consult-sessions/:id/share`
-4. 顾客加入后点击“进入视频面诊”调用 `POST /consult-sessions/:id/start`
-5. 跳转到 `/pages/consult-room/index`
+1. 医生打开 `/pages/doctor-login/index`
+2. 调用 `POST /auth/doctor/login`
+3. 登录成功后把 `doctor_access_token` 写入 storage，并跳转 `/pages/doctor-create-session/index`
+4. 创建会话时调用 `POST /consult-sessions`
+5. 创建成功后跳转 `/pages/doctor-session-detail/index?id={sessionId}`
+6. 页面轮询 `GET /consult-sessions/:id` 查看顾客是否已加入
+7. 点击“生成分享入口”调用 `POST /consult-sessions/:id/share`
+8. 顾客加入后点击“进入视频面诊”调用 `POST /consult-sessions/:id/start`
+9. 跳转到 `/pages/consult-room/index`
 
 更完整的小程序页面说明见 [docs/miniprogram.md](miniprogram.md)。
