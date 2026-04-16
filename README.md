@@ -130,7 +130,7 @@ go run ./cmd/server
 - `TRTC_RECORDING_SECRET_ID / TRTC_RECORDING_SECRET_KEY` 是腾讯云 API 密钥，不是 `TRTC_SECRET_KEY`
 - `TRTC_SECRET_KEY` 只用于生成 TRTC `userSig`
 - `TRTC_RECORDING_CALLBACK_KEY` 需要与腾讯云 TRTC 录制回调配置中的“自定义 key”保持一致
-- 服务端会按腾讯云规则校验回调头 `Sign`：
+- 当前实现会在 `HandleRecordingCallback` 中读取请求头 `Sign` 并按腾讯云规则校验：
   - `Sign = Base64(HMAC-SHA256(rawBody, TRTC_RECORDING_CALLBACK_KEY))`
 - 如果签名缺失、签名不匹配，或服务端未配置 `TRTC_RECORDING_CALLBACK_KEY`：
   - 回调接口仍返回 HTTP 200

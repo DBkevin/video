@@ -273,7 +273,7 @@
 
 - 该接口供腾讯云 TRTC 录制回调调用，不需要业务登录态
 - 回调接口始终返回 HTTP 200
-- 服务端会校验请求头 `Sign`
+- 当前实现会在 `HandleRecordingCallback` 中读取请求头 `Sign` 并进行校验
 - 校验规则：
 
 ```text

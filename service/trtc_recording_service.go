@@ -351,9 +351,9 @@ func (s *TRTCRecordingService) StopCloudRecordingForSession(ctx context.Context,
 
 func (s *TRTCRecordingService) HandleRecordingCallback(ctx context.Context, rawPayload []byte, headers http.Header) (*RecordingCallbackHandleResult, error) {
 	// 录制回调要求先用腾讯云控制台配置的自定义 key 对原始 body 做签名校验，
-	// 只有校验通过后才更新任务状态，避免伪造回调污染录制数据。
+	// 只有校验通过后才更新任务状态，避免伪造回调污染 recording_tasks 业务数据。
 	if valid, message := s.validateCallbackSignature(rawPayload, headers); !valid {
-		log.Printf("warn: trtc recording callback rejected: %s", message)
+		log.Printf("warn: trtc recording callback signature rejected: %s", message)
 		return &RecordingCallbackHandleResult{
 			Handled: false,
 			TaskID:  "",
@@ -546,6 +546,8 @@ func (s *TRTCRecordingService) buildTC3Authorization(action string, requestBody 
 }
 
 func (s *TRTCRecordingService) validateCallbackSignature(rawPayload []byte, headers http.Header) (bool, string) {
+	// 腾讯云录制回调签名规则：
+	// Sign = Base64(HMAC-SHA256(rawBody, TRTC_RECORDING_CALLBACK_KEY))
 	callbackKey := strings.TrimSpace(s.recordingCfg.CallbackKey)
 	if callbackKey == "" {
 		return false, "服务端未配置录制回调签名 key，已忽略回调"
