@@ -134,6 +134,8 @@ Page({
       this.hasHandledLeave = true
       await tuicallkit.leaveConsultRoom()
 
+      await this.maybeShowRecordingWarning(result.__message)
+
       wx.redirectTo({
         url: `/pages/consult-finish/index?sessionId=${result.session.id}&role=doctor`
       })
@@ -201,5 +203,24 @@ Page({
     wx.redirectTo({
       url: `/pages/doctor-session-detail/index?id=${this.sessionId || 0}`
     })
+  },
+
+  async maybeShowRecordingWarning(message) {
+    if (!this.isRecordingFailureMessage(message)) {
+      return
+    }
+
+    await new Promise((resolve) => {
+      wx.showModal({
+        title: '录制提醒',
+        content: message,
+        showCancel: false,
+        complete: resolve
+      })
+    })
+  },
+
+  isRecordingFailureMessage(message) {
+    return !!message && message.indexOf('录制') >= 0 && message.indexOf('失败') >= 0
   }
 })

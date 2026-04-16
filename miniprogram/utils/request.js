@@ -32,7 +32,22 @@ function request(options) {
         const message = body.message || `请求失败(${res.statusCode})`
 
         if (res.statusCode >= 200 && res.statusCode < 300 && body.code >= 200 && body.code < 300) {
-          resolve(body.data)
+          const payload = body.data
+
+          if (payload && typeof payload === 'object') {
+            try {
+              // 把服务端 message 挂回结果对象，方便页面对“录制失败但主流程成功”这类提示做显式提醒。
+              Object.defineProperty(payload, '__message', {
+                value: message,
+                enumerable: false,
+                configurable: true
+              })
+            } catch (err) {
+              payload.__message = message
+            }
+          }
+
+          resolve(payload)
           return
         }
 

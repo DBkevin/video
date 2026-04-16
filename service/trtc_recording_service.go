@@ -5,10 +5,12 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -43,6 +45,7 @@ type RecordingTaskInfo struct {
 }
 
 type RecordingCallbackHandleResult struct {
+	Handled bool   `json:"handled"`
 	TaskID  string `json:"task_id"`
 	Message string `json:"-"`
 }
@@ -347,12 +350,21 @@ func (s *TRTCRecordingService) StopCloudRecordingForSession(ctx context.Context,
 }
 
 func (s *TRTCRecordingService) HandleRecordingCallback(ctx context.Context, rawPayload []byte, headers http.Header) (*RecordingCallbackHandleResult, error) {
-	// 当前先不对回调签名做校验，headers 参数预留给后续做来源校验与链路追踪。
-	_ = headers
+	// 录制回调要求先用腾讯云控制台配置的自定义 key 对原始 body 做签名校验，
+	// 只有校验通过后才更新任务状态，避免伪造回调污染录制数据。
+	if valid, message := s.validateCallbackSignature(rawPayload, headers); !valid {
+		log.Printf("warn: trtc recording callback rejected: %s", message)
+		return &RecordingCallbackHandleResult{
+			Handled: false,
+			TaskID:  "",
+			Message: message,
+		}, nil
+	}
 
 	var payload recordingCallbackPayload
 	if err := json.Unmarshal(rawPayload, &payload); err != nil {
 		return &RecordingCallbackHandleResult{
+			Handled: false,
 			TaskID:  "",
 			Message: "录制回调报文解析失败，已忽略",
 		}, nil
@@ -361,6 +373,7 @@ func (s *TRTCRecordingService) HandleRecordingCallback(ctx context.Context, rawP
 	taskID := strings.TrimSpace(string(payload.EventInfo.TaskID))
 	if taskID == "" {
 		return &RecordingCallbackHandleResult{
+			Handled: false,
 			TaskID:  "",
 			Message: "未携带 TaskId，已忽略",
 		}, nil
@@ -370,6 +383,7 @@ func (s *TRTCRecordingService) HandleRecordingCallback(ctx context.Context, rawP
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return &RecordingCallbackHandleResult{
+				Handled: false,
 				TaskID:  taskID,
 				Message: "未找到关联录制任务，已忽略",
 			}, nil
@@ -406,6 +420,7 @@ func (s *TRTCRecordingService) HandleRecordingCallback(ctx context.Context, rawP
 	}
 
 	return &RecordingCallbackHandleResult{
+		Handled: true,
 		TaskID:  taskID,
 		Message: "录制回调处理成功",
 	}, nil
@@ -528,6 +543,25 @@ func (s *TRTCRecordingService) buildTC3Authorization(action string, requestBody 
 		signedHeaders,
 		signature,
 	)
+}
+
+func (s *TRTCRecordingService) validateCallbackSignature(rawPayload []byte, headers http.Header) (bool, string) {
+	callbackKey := strings.TrimSpace(s.recordingCfg.CallbackKey)
+	if callbackKey == "" {
+		return false, "服务端未配置录制回调签名 key，已忽略回调"
+	}
+
+	signature := strings.TrimSpace(headers.Get("Sign"))
+	if signature == "" {
+		return false, "录制回调缺少 Sign 签名，已忽略"
+	}
+
+	expectedSignature := buildTRTCRecordingCallbackSignature(rawPayload, callbackKey)
+	if !hmac.Equal([]byte(expectedSignature), []byte(signature)) {
+		return false, "录制回调签名校验失败，已忽略"
+	}
+
+	return true, ""
 }
 
 func (s *TRTCRecordingService) ensureReady() error {
@@ -661,6 +695,14 @@ func firstNonNilTime(values ...*time.Time) *time.Time {
 
 func timePtr(value time.Time) *time.Time {
 	return &value
+}
+
+func buildTRTCRecordingCallbackSignature(rawPayload []byte, callbackKey string) string {
+	// 腾讯云录制回调签名规则：
+	// sign = Base64(HMAC-SHA256(rawBody, callbackKey))
+	mac := hmac.New(sha256.New, []byte(callbackKey))
+	_, _ = mac.Write(rawPayload)
+	return base64.StdEncoding.EncodeToString(mac.Sum(nil))
 }
 
 func sha256Hex(data []byte) string {

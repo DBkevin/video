@@ -6,6 +6,7 @@
 
 - `pages/customer-entry/index`：顾客进入页
 - `pages/doctor-session-detail/index`：医生创建成功页/会话详情页
+- `pages/recording-playback/index`：医生回放页
 - `pages/consult-room/index`：通话页
 - `pages/consult-finish/index`：结束页
 - `utils/auth.js`：微信登录与 token 存储
@@ -33,12 +34,15 @@
 6. 页面调用 `POST /api/v1/consult-sessions/:id/start`
 7. start 成功后把会话与 RTC 参数写入本地 storage
 8. 跳转到 `consult-room`
+9. 面诊结束后，医生可返回 `doctor-session-detail` 查看 `recording_task` 状态
+10. 如果 `recording_task.video_url` 已生成，可进入 `recording-playback` 查看回放
 
 ## 通话页约定
 
 - 顾客进入通话页后，优先初始化 TUICallKit，并保持候诊状态
 - 医生进入通话页后，优先初始化 TUICallKit，并基于当前会话向顾客发起视频通话
 - 如果本地尚未安装官方 TUICallKit 包，`utils/tuicallkit.js` 会进入 mock 模式，方便先走通页面和接口链路
+- 如果 `start / finish` 返回 message 中带有录制失败提示，页面会弹窗提醒医生，但不会打断主流程
 
 ## TUICallKit 包说明
 

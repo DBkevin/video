@@ -98,6 +98,11 @@ go run ./cmd/server
   - `video_url`
   - `started_at`
   - `ended_at`
+- 医生小程序 `pages/doctor-session-detail/index` 已补充录制状态卡片：
+  - `recording`：显示“录制中”
+  - `stopping`：显示“处理中”
+  - `finished`：如果 `video_url` 已回传，可直接“查看回放 / 复制回放链接”
+  - `failed`：显示录制失败提示，便于医生及时处理
 - 录制回调接口会始终返回 HTTP 200，避免腾讯云因为非 200 响应重复回调
 
 ## 录制配置项
@@ -107,6 +112,7 @@ go run ./cmd/server
 - `TRTC_RECORDING_ENABLED`
 - `TRTC_RECORDING_SECRET_ID`
 - `TRTC_RECORDING_SECRET_KEY`
+- `TRTC_RECORDING_CALLBACK_KEY`
 - `TRTC_RECORDING_REGION`
 - `TRTC_RECORDING_RESOURCE_EXPIRED_HOUR`
 - `TRTC_RECORDING_MAX_IDLE_TIME`
@@ -123,6 +129,13 @@ go run ./cmd/server
 
 - `TRTC_RECORDING_SECRET_ID / TRTC_RECORDING_SECRET_KEY` 是腾讯云 API 密钥，不是 `TRTC_SECRET_KEY`
 - `TRTC_SECRET_KEY` 只用于生成 TRTC `userSig`
+- `TRTC_RECORDING_CALLBACK_KEY` 需要与腾讯云 TRTC 录制回调配置中的“自定义 key”保持一致
+- 服务端会按腾讯云规则校验回调头 `Sign`：
+  - `Sign = Base64(HMAC-SHA256(rawBody, TRTC_RECORDING_CALLBACK_KEY))`
+- 如果签名缺失、签名不匹配，或服务端未配置 `TRTC_RECORDING_CALLBACK_KEY`：
+  - 回调接口仍返回 HTTP 200
+  - 返回体中会标记 `handled=false`
+  - 服务端日志会记录一条拒绝原因，方便上线排查
 - `TRTC_RECORDING_CALLBACK_URL` 需要在腾讯云 TRTC 录制回调配置中指向你的服务地址，例如 `https://api.example.com/api/v1/trtc/recording/callback`
 - 第六阶段的录制请求已切换成 RESTful 直连，因此服务端会自行完成 TC3-HMAC-SHA256 签名
 
@@ -141,6 +154,7 @@ go run ./cmd/server
 
 - `pages/customer-entry/index`：顾客进入页
 - `pages/doctor-session-detail/index`：医生创建成功页/会话详情页
+- `pages/recording-playback/index`：医生回放页
 - `pages/consult-room/index`：通话页
 - `pages/consult-finish/index`：结束页
 
@@ -168,6 +182,7 @@ go run ./cmd/server
 3. 轮询顾客加入状态
 4. 顾客加入后调用 `/api/v1/consult-sessions/:id/start`
 5. 进入通话页
+6. 面诊结束后，可回到 `doctor-session-detail` 查看 `recording_task` 状态与回放入口
 
 更完整的小程序页面说明见 [docs/miniprogram.md](docs/miniprogram.md)。
 

@@ -49,6 +49,7 @@ type TRTCRecordingConfig struct {
 	Enabled             bool
 	SecretID            string
 	SecretKey           string
+	CallbackKey         string
 	Region              string
 	ResourceExpiredHour int64
 	MaxIdleTime         int64
@@ -103,6 +104,7 @@ func Load() (*Config, error) {
 			Enabled:             getBool("TRTC_RECORDING_ENABLED", true),
 			SecretID:            getString("TRTC_RECORDING_SECRET_ID", ""),
 			SecretKey:           getString("TRTC_RECORDING_SECRET_KEY", ""),
+			CallbackKey:         getString("TRTC_RECORDING_CALLBACK_KEY", ""),
 			Region:              getString("TRTC_RECORDING_REGION", "ap-shanghai"),
 			ResourceExpiredHour: getInt64("TRTC_RECORDING_RESOURCE_EXPIRED_HOUR", 72),
 			MaxIdleTime:         getInt64("TRTC_RECORDING_MAX_IDLE_TIME", 30),

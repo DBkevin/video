@@ -1,3 +1,41 @@
 .hint {
   margin-top: 24rpx;
 }
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.status-tag.idle {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.status-tag.recording {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-tag.stopping {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-tag.finished {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.status-tag.failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.recording-hint {
+  margin-top: 14rpx;
+}

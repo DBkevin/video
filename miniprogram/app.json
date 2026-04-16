@@ -4,6 +4,7 @@
     "pages/doctor-create-session/index",
     "pages/customer-entry/index",
     "pages/doctor-session-detail/index",
+    "pages/recording-playback/index",
     "pages/consult-room/index",
     "pages/consult-finish/index",
     "TUICallKit/pages/globalCall/globalCall"

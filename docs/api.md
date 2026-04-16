@@ -118,6 +118,13 @@
 }
 ```
 
+医生端展示建议：
+
+- `recording`：显示“录制中”
+- `stopping`：显示“处理中”
+- `finished`：如果 `video_url` 已回传，可展示“查看回放 / 复制回放链接”
+- `failed`：展示录制失败提示，并提醒医生稍后查看日志或重试
+
 ### 3. 医生生成分享入口
 
 - `POST /consult-sessions/:id/share`
@@ -210,6 +217,7 @@
 - 小程序医生端可在 start 成功后初始化 TUICallKit，并向顾客发起视频通话
 - 接口成功后会自动通过 TRTC RESTful API 创建云端录制任务
 - 默认采用合流录制（mixed recording）并写入 VOD
+- 如果录制启动失败，接口仍返回业务成功，但 `message` 会带上明确的录制失败提示，前端需要显式提醒医生
 
 ### 7. 医生取消会话
 
@@ -253,6 +261,7 @@
 - 已结束会话再次调用会幂等返回当前结果，不会重复创建记录
 - 接口成功后会自动通过 TRTC RESTful API 停止录制
 - finish 保持幂等，不会重复创建录制任务
+- 如果录制停止失败，接口仍返回业务成功，但 `message` 会带上明确的录制失败提示，前端需要显式提醒医生
 
 ## TRTC 录制回调
 
@@ -264,8 +273,46 @@
 
 - 该接口供腾讯云 TRTC 录制回调调用，不需要业务登录态
 - 回调接口始终返回 HTTP 200
+- 服务端会校验请求头 `Sign`
+- 校验规则：
+
+```text
+Sign = Base64(HMAC-SHA256(rawBody, TRTC_RECORDING_CALLBACK_KEY))
+```
+
+- `TRTC_RECORDING_CALLBACK_KEY` 需要与腾讯云 TRTC 控制台录制回调里配置的“自定义 key”保持一致
+- 如果签名校验失败、缺少 `Sign`，或服务端未配置 `TRTC_RECORDING_CALLBACK_KEY`：
+  - 仍返回 HTTP 200
+  - `data.handled=false`
+  - 服务端记录拒绝日志
 - 收到上传完成事件后，后端会把 `file_id / video_url / file_name` 写入 `recording_tasks`
 - `raw_callback` 会原样保存在数据库，便于后续排查回调与录制问题
+
+成功返回示例：
+
+```json
+{
+  "code": 200,
+  "message": "录制回调处理成功",
+  "data": {
+    "handled": true,
+    "task_id": "1400000000-task-id"
+  }
+}
+```
+
+签名校验失败返回示例：
+
+```json
+{
+  "code": 200,
+  "message": "录制回调签名校验失败，已忽略",
+  "data": {
+    "handled": false,
+    "task_id": ""
+  }
+}
+```
 
 ## 小程序最小接入链路
 

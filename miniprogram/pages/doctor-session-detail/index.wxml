@@ -24,6 +24,25 @@
       </view>
 
       <view class="section">
+        <view class="label">录制状态</view>
+        <view class="value">
+          <text wx:if="{{recordingTask}}" class="{{recordingTask.status_class}}">{{recordingTask.status_label}}</text>
+          <text wx:else class="status-tag idle">未开始</text>
+        </view>
+        <view wx:if="{{recordingTask}}" class="hint recording-hint">{{recordingTask.status_hint}}</view>
+      </view>
+
+      <view class="section" wx:if="{{recordingTask && recordingTask.task_id}}">
+        <view class="label">录制任务ID</view>
+        <view class="value">{{recordingTask.task_id}}</view>
+      </view>
+
+      <view class="section" wx:if="{{recordingTask && recordingTask.file_id}}">
+        <view class="label">录制文件ID</view>
+        <view class="value">{{recordingTask.file_id}}</view>
+      </view>
+
+      <view class="section">
         <view class="label">分享路径</view>
         <view class="value">{{sharePath || '尚未生成分享入口'}}</view>
       </view>
@@ -49,9 +68,15 @@
 
     <button class="button secondary" loading="{{busyAction}}" bindtap="handleGenerateShare">生成分享入口</button>
     <button class="button secondary" bindtap="handleCopySharePath">复制分享路径</button>
+    <button class="button secondary" wx:if="{{recordingTask && recordingTask.video_url}}" bindtap="handleOpenPlayback">查看回放</button>
+    <button class="button secondary" wx:if="{{recordingTask && recordingTask.video_url}}" bindtap="handleCopyPlaybackURL">复制回放链接</button>
     <button class="button" disabled="{{!canStart || busyAction}}" loading="{{busyAction}}" bindtap="handleStartConsult">进入视频面诊</button>
     <button class="button warn" disabled="{{busyAction || !session || session.status === 'finished' || session.status === 'cancelled' || session.status === 'expired'}}" loading="{{busyAction}}" bindtap="handleCancelSession">取消当前会话</button>
 
-    <view class="hint">页面会每 3 秒轮询一次会话状态，顾客加入后即可开始面诊。</view>
+    <view class="hint">
+      {{recordingTask && (recordingTask.status === 'recording' || recordingTask.status === 'stopping')
+        ? '页面会持续轮询录制状态，直到回放地址准备完成。'
+        : '页面会每 3 秒轮询一次会话状态，顾客加入后即可开始面诊。'}}
+    </view>
   </view>
 </view>
