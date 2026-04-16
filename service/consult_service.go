@@ -84,13 +84,11 @@ type GetConsultEntryResult struct {
 }
 
 type GetConsultSessionResult struct {
-	Session        *model.ConsultSession `json:"session"`
-	Customer       *CustomerBasicInfo    `json:"customer,omitempty"`
-	CanStart       bool                  `json:"can_start"`
-	RecordStatus   string                `json:"record_status"`
-	RecordVideoURL string                `json:"record_video_url"`
-	RecordFileID   string                `json:"record_file_id"`
-	Message        string                `json:"-"`
+	Session       *model.ConsultSession `json:"session"`
+	Customer      *CustomerBasicInfo    `json:"customer,omitempty"`
+	CanStart      bool                  `json:"can_start"`
+	RecordingTask *RecordingTaskInfo    `json:"recording_task,omitempty"`
+	Message       string                `json:"-"`
 }
 
 type JoinConsultSessionResult struct {
@@ -326,13 +324,11 @@ func (s *ConsultService) GetConsultSession(ctx context.Context, sessionID, docto
 	}
 
 	return &GetConsultSessionResult{
-		Session:        session,
-		Customer:       buildCustomerBasicInfo(session.CustomerID, &session.Customer),
-		CanStart:       session.Status == model.ConsultSessionStatusJoined,
-		RecordStatus:   recordInfo.Status,
-		RecordVideoURL: recordInfo.VideoURL,
-		RecordFileID:   recordInfo.FileID,
-		Message:        "会话信息获取成功",
+		Session:       session,
+		Customer:      buildCustomerBasicInfo(session.CustomerID, &session.Customer),
+		CanStart:      session.Status == model.ConsultSessionStatusJoined,
+		RecordingTask: recordInfo,
+		Message:       "会话信息获取成功",
 	}, nil
 }
 
@@ -801,9 +797,9 @@ func (s *ConsultService) buildRTCInfo(ctx context.Context, roomID int32, rtcUser
 	}, nil
 }
 
-func (s *ConsultService) safeGetRecordingInfo(ctx context.Context, sessionID uint64) (*RecordingInfo, error) {
+func (s *ConsultService) safeGetRecordingInfo(ctx context.Context, sessionID uint64) (*RecordingTaskInfo, error) {
 	if s.recordingService == nil {
-		return &RecordingInfo{}, nil
+		return nil, nil
 	}
 
 	return s.recordingService.GetRecordingInfo(ctx, sessionID)
@@ -814,7 +810,7 @@ func (s *ConsultService) startRecordingAfterConsultStart(ctx context.Context, se
 		return successMessage
 	}
 
-	if _, err := s.recordingService.StartRecording(ctx, session); err != nil {
+	if _, err := s.recordingService.CreateCloudRecordingForSession(ctx, session); err != nil {
 		return fmt.Sprintf("%s，但云端录制启动失败：%s", successMessage, err.Error())
 	}
 
@@ -826,7 +822,7 @@ func (s *ConsultService) stopRecordingAfterConsultFinish(ctx context.Context, se
 		return successMessage
 	}
 
-	if _, err := s.recordingService.StopRecording(ctx, session); err != nil {
+	if _, err := s.recordingService.StopCloudRecordingForSession(ctx, session); err != nil {
 		return fmt.Sprintf("%s，但录制停止请求失败：%s", successMessage, err.Error())
 	}
 

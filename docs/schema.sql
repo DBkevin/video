@@ -90,7 +90,7 @@ CREATE TABLE `consult_records` (
 CREATE TABLE `recording_tasks` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `session_id` BIGINT UNSIGNED NOT NULL COMMENT '面诊会话ID',
-  `task_id` VARCHAR(128) NOT NULL COMMENT 'TRTC录制任务ID',
+  `task_id` VARCHAR(128) NOT NULL COMMENT 'TRTC RESTful录制任务ID',
   `record_mode` VARCHAR(32) NOT NULL DEFAULT 'mixed' COMMENT '录制模式：mixed',
   `storage_type` VARCHAR(32) NOT NULL DEFAULT 'vod' COMMENT '存储类型：vod',
   `status` VARCHAR(32) NOT NULL DEFAULT 'recording' COMMENT '录制状态：recording/stopping/finished/failed',
@@ -99,7 +99,7 @@ CREATE TABLE `recording_tasks` (
   `file_name` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '录制文件名',
   `started_at` DATETIME NULL DEFAULT NULL COMMENT '录制开始时间',
   `ended_at` DATETIME NULL DEFAULT NULL COMMENT '录制结束时间',
-  `raw_callback` LONGTEXT NULL COMMENT '录制回调原始报文',
+  `raw_callback` LONGTEXT NULL COMMENT '腾讯云录制回调原始报文',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',

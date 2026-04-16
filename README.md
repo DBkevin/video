@@ -71,7 +71,7 @@ go run ./cmd/server
 
 第五阶段已新增“视频默认保存”能力，当前实现采用：
 
-- TRTC 手动录制 API
+- TRTC RESTful API 手动录制
 - 默认优先合流录制
 - 存储到 VOD
 - 通过回调落库 `file_id / video_url / file_name`
@@ -81,9 +81,9 @@ go run ./cmd/server
 
 1. 医生调用 `POST /api/v1/consult-sessions/:id/start`
 2. 后端把会话切到 `in_consult`
-3. 后端自动调用 TRTC `CreateCloudRecording`
+3. 后端自动通过 RESTful API 调用 TRTC `CreateCloudRecording`
 4. 医生调用 `POST /api/v1/consult-sessions/:id/finish`
-5. 后端自动调用 TRTC `DeleteCloudRecording`
+5. 后端自动通过 RESTful API 调用 TRTC `DeleteCloudRecording`
 6. 腾讯云回调 `POST /api/v1/trtc/recording/callback`
 7. 后端更新 `recording_tasks.file_id / video_url / raw_callback`
 
@@ -91,10 +91,14 @@ go run ./cmd/server
 
 - 如果录制启动失败，不会打断已开始的会话，但返回消息会明确提示“录制启动失败”
 - 如果录制停止失败，不会回滚已结束的会话；医生可继续通过会话详情查看 `record_status`
-- 医生查看 `GET /api/v1/consult-sessions/:id` 时，可直接拿到：
-  - `record_status`
-  - `record_video_url`
-  - `record_file_id`
+- 医生查看 `GET /api/v1/consult-sessions/:id` 时，可直接拿到 `recording_task`：
+  - `status`
+  - `task_id`
+  - `file_id`
+  - `video_url`
+  - `started_at`
+  - `ended_at`
+- 录制回调接口会始终返回 HTTP 200，避免腾讯云因为非 200 响应重复回调
 
 ## 录制配置项
 
@@ -120,6 +124,7 @@ go run ./cmd/server
 - `TRTC_RECORDING_SECRET_ID / TRTC_RECORDING_SECRET_KEY` 是腾讯云 API 密钥，不是 `TRTC_SECRET_KEY`
 - `TRTC_SECRET_KEY` 只用于生成 TRTC `userSig`
 - `TRTC_RECORDING_CALLBACK_URL` 需要在腾讯云 TRTC 录制回调配置中指向你的服务地址，例如 `https://api.example.com/api/v1/trtc/recording/callback`
+- 第六阶段的录制请求已切换成 RESTful 直连，因此服务端会自行完成 TC3-HMAC-SHA256 签名
 
 ## 面诊会话流程
 

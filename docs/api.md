@@ -103,9 +103,20 @@
 
 返回字段新增：
 
-- `record_status`
-- `record_video_url`
-- `record_file_id`
+- `recording_task`
+
+`recording_task` 结构示例：
+
+```json
+{
+  "status": "finished",
+  "task_id": "xxx",
+  "file_id": "5285890813738447101",
+  "video_url": "https://xxx.vod2.myqcloud.com/xxx.mp4",
+  "started_at": "2026-04-16T10:00:00+08:00",
+  "ended_at": "2026-04-16T10:12:00+08:00"
+}
+```
 
 ### 3. 医生生成分享入口
 
@@ -197,7 +208,8 @@
 - 只有顾客已加入的 `joined` 状态，才能进入 `start`
 - `start` 后状态切为 `in_consult`
 - 小程序医生端可在 start 成功后初始化 TUICallKit，并向顾客发起视频通话
-- 接口成功后会自动调用 TRTC 云端手动录制，默认采用合流录制并写入 VOD
+- 接口成功后会自动通过 TRTC RESTful API 创建云端录制任务
+- 默认采用合流录制（mixed recording）并写入 VOD
 
 ### 7. 医生取消会话
 
@@ -239,7 +251,8 @@
 
 - 会写入 `consult_records`
 - 已结束会话再次调用会幂等返回当前结果，不会重复创建记录
-- 接口成功后会自动发送 TRTC 录制停止请求，录制文件通过回调异步回写
+- 接口成功后会自动通过 TRTC RESTful API 停止录制
+- finish 保持幂等，不会重复创建录制任务
 
 ## TRTC 录制回调
 
@@ -250,6 +263,7 @@
 说明：
 
 - 该接口供腾讯云 TRTC 录制回调调用，不需要业务登录态
+- 回调接口始终返回 HTTP 200
 - 收到上传完成事件后，后端会把 `file_id / video_url / file_name` 写入 `recording_tasks`
 - `raw_callback` 会原样保存在数据库，便于后续排查回调与录制问题
 
