@@ -32,6 +32,21 @@ go mod tidy
 go run ./cmd/server
 ```
 
+## 本次生产部署默认值
+
+为了方便你直接打包上 Ubuntu 24 服务器，这一版已经按以下线上信息补好了默认模板：
+
+- 域名：`https://hxtest.xmmylike.com/`
+- 服务器 IP：`120.25.70.117`
+- 小程序默认接口地址：[miniprogram/utils/config.js](miniprogram/utils/config.js) 已切到 `https://hxtest.xmmylike.com/api/v1`
+- TRTC 录制回调地址模板：`https://hxtest.xmmylike.com/api/v1/trtc/recording/callback`
+- 生产环境模板文件：`deploy/.env.production.example`
+
+注意：
+
+- 数据库密码、Redis 密码、JWT 密钥、TRTC 密钥、微信小程序密钥仍需要你按正式环境补齐
+- 如果 MySQL / Redis 和 Go 服务最终都部署在同一台机器，也可以把 `120.25.70.117` 改成 `127.0.0.1`
+
 ## 登录说明
 
 当前登录接口默认读取数据库中的账号数据：
@@ -179,10 +194,11 @@ go run ./cmd/server
 
 1. 查看会话详情
 2. 如有需要生成新的分享入口
-3. 轮询顾客加入状态
-4. 顾客加入后调用 `/api/v1/consult-sessions/:id/start`
-5. 进入通话页
-6. 面诊结束后，可回到 `doctor-session-detail` 查看 `recording_task` 状态与回放入口
+3. 通过微信原生“发送给顾客”把小程序卡片发给顾客，卡片 path 会自动带上 `token`
+4. 轮询顾客加入状态
+5. 顾客加入后调用 `/api/v1/consult-sessions/:id/start`
+6. 进入通话页
+7. 面诊结束后，可回到 `doctor-session-detail` 查看 `recording_task` 状态与回放入口
 
 更完整的小程序页面说明见 [docs/miniprogram.md](docs/miniprogram.md)。
 
@@ -202,6 +218,145 @@ go run ./cmd/server
 
 1. 先启动后端服务，并配置好 `TRTC_*` 和 `WECHAT_MINIAPP_*` 环境变量
 2. 在微信开发者工具中打开 `miniprogram/`
-3. 根据实际后端地址修改 `miniprogram/utils/config.js` 中的 `API_BASE_URL`
+3. 当前默认后端地址已经改为 `https://hxtest.xmmylike.com/api/v1`，如需本地调试再临时改回本地地址
 4. 医生端暂时继续沿用现有 `/api/v1/auth/doctor/login` 登录方式，可把拿到的 token 写入 `doctor_access_token` storage 后打开 `doctor-session-detail`
 5. 顾客端直接通过分享路径进入 `customer-entry`
+
+## Ubuntu 24 部署
+
+### 1. 本地打包 Linux 可执行文件
+
+Windows PowerShell 下可直接执行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_linux_amd64.ps1
+```
+
+执行完成后会生成：
+
+- `dist/video-consult-mvp-linux-amd64/`
+- `dist/video-consult-mvp-linux-amd64.zip`
+
+压缩包里已包含：
+
+- Linux 二进制 `video-consult-mvp`
+- 生产环境模板 `.env.example`
+- Nginx 配置模板 `deploy/hxtest.xmmylike.com.conf`
+- systemd 服务模板 `deploy/video-consult-mvp.service`
+- 初始化表结构 `docs/schema.sql`
+
+### 2. 上传到服务器
+
+示例目录建议：
+
+```bash
+sudo mkdir -p /opt/video-consult-mvp
+sudo chown -R www-data:www-data /opt/video-consult-mvp
+```
+
+把压缩包或目录上传到服务器后，解压到：
+
+```bash
+/opt/video-consult-mvp
+```
+
+### 3. 配置环境变量
+
+复制模板：
+
+```bash
+cd /opt/video-consult-mvp
+cp .env.example .env
+```
+
+重点检查以下值：
+
+- `SERVER_ADDR=127.0.0.1:8080`
+- `GIN_MODE=release`
+- `MYSQL_DSN=你的账号:你的密码@tcp(127.0.0.1:3306)/video_consult_mvp?charset=utf8mb4&parseTime=True&loc=Asia%2FShanghai`
+- `MYSQL_AUTO_MIGRATE=false`
+- `REDIS_ADDR=127.0.0.1:6379`
+- `TRTC_RECORDING_CALLBACK_URL=https://hxtest.xmmylike.com/api/v1/trtc/recording/callback`
+- `WECHAT_MINIAPP_APP_ID`
+- `WECHAT_MINIAPP_APP_SECRET`
+- `TRTC_SDK_APP_ID`
+- `TRTC_SECRET_KEY`
+- `TRTC_RECORDING_SECRET_ID`
+- `TRTC_RECORDING_SECRET_KEY`
+- `TRTC_RECORDING_CALLBACK_KEY`
+
+### 4. 初始化数据库
+
+```bash
+mysql -h 120.25.70.117 -u root -p video_consult_mvp < /opt/video-consult-mvp/docs/schema.sql
+```
+
+如果你希望直接依赖程序启动时的 `AutoMigrate`，也可以跳过这一步，但正式环境仍建议先执行一次结构 SQL。
+如果数据库已经初始化过，正式环境建议把 `.env` 中的 `MYSQL_AUTO_MIGRATE=false`，避免 GORM 在既有索引和外键约束上做变更导致服务启动失败。
+
+### 5. 配置 systemd
+
+复制服务文件：
+
+```bash
+sudo cp /opt/video-consult-mvp/deploy/video-consult-mvp.service /etc/systemd/system/video-consult-mvp.service
+```
+
+如果你不打算使用 `www-data` 用户，请先修改服务文件中的 `User` / `Group`。
+
+启动服务：
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable video-consult-mvp
+sudo systemctl start video-consult-mvp
+sudo systemctl status video-consult-mvp
+```
+
+查看日志：
+
+```bash
+sudo journalctl -u video-consult-mvp -f
+```
+
+### 6. 配置 Nginx 与 HTTPS 域名
+
+复制模板：
+
+```bash
+sudo cp /opt/video-consult-mvp/deploy/hxtest.xmmylike.com.conf /etc/nginx/sites-available/hxtest.xmmylike.com.conf
+sudo ln -sf /etc/nginx/sites-available/hxtest.xmmylike.com.conf /etc/nginx/sites-enabled/hxtest.xmmylike.com.conf
+```
+
+证书建议使用 certbot：
+
+```bash
+sudo apt update
+sudo apt install -y nginx certbot python3-certbot-nginx
+sudo certbot --nginx -d hxtest.xmmylike.com
+```
+
+然后检查并重载：
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 7. 微信小程序后台需要配置的合法域名
+
+在微信小程序后台，把以下域名加入白名单：
+
+- `https://hxtest.xmmylike.com`
+
+至少需要配置到：
+
+- `request 合法域名`
+- 如有文件下载/播放场景，再补充 `downloadFile 合法域名`
+
+### 8. 联调检查清单
+
+- 浏览器打开 `https://hxtest.xmmylike.com/healthz`
+- 小程序请求 `https://hxtest.xmmylike.com/api/v1/...` 正常返回
+- TRTC 录制回调地址已在腾讯云控制台配置为 `https://hxtest.xmmylike.com/api/v1/trtc/recording/callback`
+- `Sign` 校验所用 `TRTC_RECORDING_CALLBACK_KEY` 与腾讯云控制台保持一致

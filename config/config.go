@@ -24,7 +24,8 @@ type ServerConfig struct {
 }
 
 type MySQLConfig struct {
-	DSN string
+	DSN         string
+	AutoMigrate bool
 }
 
 type RedisConfig struct {
@@ -83,7 +84,8 @@ func Load() (*Config, error) {
 			Mode: getString("GIN_MODE", "debug"),
 		},
 		MySQL: MySQLConfig{
-			DSN: getString("MYSQL_DSN", "root:123456@tcp(127.0.0.1:3306)/video_consult_mvp?charset=utf8mb4&parseTime=True&loc=Local"),
+			DSN:         getString("MYSQL_DSN", "root:123456@tcp(127.0.0.1:3306)/video_consult_mvp?charset=utf8mb4&parseTime=True&loc=Asia%2FShanghai"),
+			AutoMigrate: getBool("MYSQL_AUTO_MIGRATE", true),
 		},
 		Redis: RedisConfig{
 			Addr:     getString("REDIS_ADDR", "127.0.0.1:6379"),

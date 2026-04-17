@@ -29,13 +29,14 @@
 1. 医生打开 `doctor-session-detail`
 2. 页面调用 `GET /api/v1/consult-sessions/:id`
 3. 医生点击“生成分享入口”时调用 `POST /api/v1/consult-sessions/:id/share`
-4. 页面轮询会话状态，等待顾客加入
-5. 顾客加入后，医生点击“进入视频面诊”
-6. 页面调用 `POST /api/v1/consult-sessions/:id/start`
-7. start 成功后把会话与 RTC 参数写入本地 storage
-8. 跳转到 `consult-room`
-9. 面诊结束后，医生可返回 `doctor-session-detail` 查看 `recording_task` 状态
-10. 如果 `recording_task.video_url` 已生成，可进入 `recording-playback` 查看回放
+4. 页面拿到 `share_url_path` 后，通过 `open-type="share"` 和 `onShareAppMessage` 发送微信小程序卡片给顾客
+5. 页面轮询会话状态，等待顾客加入
+6. 顾客加入后，医生点击“进入视频面诊”
+7. 页面调用 `POST /api/v1/consult-sessions/:id/start`
+8. start 成功后把会话与 RTC 参数写入本地 storage
+9. 跳转到 `consult-room`
+10. 面诊结束后，医生可返回 `doctor-session-detail` 查看 `recording_task` 状态
+11. 如果 `recording_task.video_url` 已生成，可进入 `recording-playback` 查看回放
 
 ## 通话页约定
 

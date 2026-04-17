@@ -1,6 +1,7 @@
 .env
 .gocache/
 .gomodcache/
+dist/
 *.exe
 miniprogram/node_modules/
 miniprogram/miniprogram_npm/

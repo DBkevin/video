@@ -16,6 +16,7 @@ Page({
 
   onLoad(options) {
     this.sessionId = Number(options.id || options.sessionId || 0)
+    this.syncShareMenu('')
   },
 
   onShow() {
@@ -67,6 +68,8 @@ Page({
         doctor: auth.getDoctorProfile()
       })
 
+      this.syncShareMenu(result.session ? result.session.share_url_path : '')
+
       if (!this.shouldKeepPolling(result.session, recordingTask)) {
         this.stopPolling()
       }
@@ -107,6 +110,7 @@ Page({
         sharePath: result.share_url_path,
         session: result.session
       })
+      this.syncShareMenu(result.share_url_path)
       wx.showToast({
         title: '分享入口已生成',
         icon: 'success'
@@ -133,6 +137,19 @@ Page({
     wx.setClipboardData({
       data: this.data.sharePath
     })
+  },
+
+  onShareAppMessage() {
+    const sharePath = this.data.sharePath || ''
+    const doctor = this.data.doctor || {}
+    const session = this.data.session || {}
+
+    return {
+      // 真正发送给顾客的是微信小程序卡片，而不是把内部 path 当普通字符串复制出去。
+      title: `${doctor.name || '医生'}邀请您进入视频面诊`,
+      path: sharePath || '/pages/customer-entry/index',
+      desc: session.session_no ? `会话编号：${session.session_no}` : '点击后进入顾客候诊页'
+    }
   },
 
   async handleStartConsult() {
@@ -296,5 +313,20 @@ Page({
 
   isRecordingFailureMessage(message) {
     return !!message && message.indexOf('录制') >= 0 && message.indexOf('失败') >= 0
+  },
+
+  syncShareMenu(sharePath) {
+    if (!wx || typeof wx.showShareMenu !== 'function' || typeof wx.hideShareMenu !== 'function') {
+      return
+    }
+
+    if (sharePath) {
+      wx.showShareMenu({
+        menus: ['shareAppMessage']
+      })
+      return
+    }
+
+    wx.hideShareMenu()
   }
 })

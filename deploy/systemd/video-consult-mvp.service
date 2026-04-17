@@ -1,0 +1,18 @@
+[Unit]
+Description=Video Consult MVP API Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/video-consult-mvp
+EnvironmentFile=/opt/video-consult-mvp/.env
+ExecStart=/opt/video-consult-mvp/video-consult-mvp
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

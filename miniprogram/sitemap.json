@@ -1,4 +1,9 @@
 {
   "desc": "视频面诊 MVP 小程序页面配置",
-  "rules": []
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
 }

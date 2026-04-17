@@ -67,6 +67,7 @@
     </block>
 
     <button class="button secondary" loading="{{busyAction}}" bindtap="handleGenerateShare">生成分享入口</button>
+    <button class="button secondary" wx:if="{{sharePath}}" open-type="share">发送给顾客</button>
     <button class="button secondary" bindtap="handleCopySharePath">复制分享路径</button>
     <button class="button secondary" wx:if="{{recordingTask && recordingTask.video_url}}" bindtap="handleOpenPlayback">查看回放</button>
     <button class="button secondary" wx:if="{{recordingTask && recordingTask.video_url}}" bindtap="handleCopyPlaybackURL">复制回放链接</button>
