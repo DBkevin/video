@@ -1,39 +1,85 @@
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
+$fixPackageScript = Join-Path $PSScriptRoot "fix-tuicallkit-package.js"
 $sourcePackage = Join-Path $root "node_modules\@trtc\calls-uikit-wx"
 $targetKit = Join-Path $root "TUICallKit"
 $sourceWasm = Join-Path $root "node_modules\@trtc\call-engine-lite-wx\dist\RTCCallEngine.wasm.br"
 $targetStatic = Join-Path $root "static"
 $builtLiteChat = Join-Path $root "miniprogram_npm\@tencentcloud\lite-chat"
 $sourceBasicJs = Join-Path $root "node_modules\@tencentcloud\lite-chat\basic.js"
+$targetDebug = Join-Path $root "TUICallKit\debug"
 
 if (-not (Test-Path $sourcePackage)) {
-  throw "未找到 @trtc/calls-uikit-wx。请先在 miniprogram 目录执行 npm install。"
+  throw "@trtc/calls-uikit-wx not found. Please run npm install in miniprogram directory first."
 }
 
-Write-Host "同步 TUICallKit 源码目录..."
+if (Test-Path $fixPackageScript) {
+  Write-Host "Patching @trtc/calls-uikit-wx package entry..."
+  node $fixPackageScript
+}
+
+Write-Host "Syncing TUICallKit source code..."
 New-Item -ItemType Directory -Force -Path $targetKit | Out-Null
 Copy-Item -Path (Join-Path $sourcePackage "*") -Destination $targetKit -Recurse -Force
 
 if (Test-Path $sourceWasm) {
-  Write-Host "同步 RTCCallEngine.wasm.br..."
+  Write-Host "Syncing RTCCallEngine.wasm.br..."
   New-Item -ItemType Directory -Force -Path $targetStatic | Out-Null
   Copy-Item -Path $sourceWasm -Destination (Join-Path $targetStatic "RTCCallEngine.wasm.br") -Force
 } else {
-  Write-Warning "未找到 RTCCallEngine.wasm.br，请确认 @trtc/call-engine-lite-wx 依赖已安装。"
+  Write-Warning "RTCCallEngine.wasm.br not found. Please check if @trtc/call-engine-lite-wx is installed."
 }
 
 if ((Test-Path $builtLiteChat) -and (Test-Path $sourceBasicJs)) {
-  Write-Host "修复 miniprogram_npm/@tencentcloud/lite-chat/basic.js..."
+  Write-Host "Fixing miniprogram_npm/@tencentcloud/lite-chat/basic.js..."
   Copy-Item -Path $sourceBasicJs -Destination (Join-Path $builtLiteChat "basic.js") -Force
 
-  $builtIndexJs = Join-Path $builtLiteChat "index.js"
-  if (Test-Path $builtIndexJs) {
-    Remove-Item -LiteralPath $builtIndexJs -Force
+  # Only basic.js is required for the current mini program call flow.
+  # Removing the standard/professional bundles keeps the upload package small.
+  $redundantFiles = @(
+    "index.js",
+    "basic.es.js",
+    "standard.js",
+    "standard.es.js",
+    "professional.js",
+    "professional.es.js",
+    "README.md",
+    "package.json",
+    "index.d.ts",
+    "basic.d.ts",
+    "professional.d.ts"
+  )
+
+  foreach ($relativePath in $redundantFiles) {
+    $targetFile = Join-Path $builtLiteChat $relativePath
+    if (Test-Path $targetFile) {
+      Remove-Item -LiteralPath $targetFile -Force
+    }
   }
-} else {
-  Write-Host "提示：微信开发者工具完成“构建 npm”后，请再次运行本脚本，以修复 @tencentcloud/lite-chat/basic.js。"
+
+  $pluginsFolder = Join-Path $builtLiteChat "plugins"
+  if (Test-Path $pluginsFolder) {
+    Remove-Item -LiteralPath $pluginsFolder -Recurse -Force
+  }
+
+  Get-ChildItem -Path $builtLiteChat -Recurse -File -Include *.map,*.d.ts | ForEach-Object {
+    Remove-Item -LiteralPath $_.FullName -Force
+  }
 }
 
-Write-Host "TUICallKit 同步完成。接下来请打开微信开发者工具，执行“工具 -> 构建 npm”。"
+if (Test-Path $targetDebug) {
+  # Debug helpers are not needed in preview/upload packages.
+  Remove-Item -LiteralPath $targetDebug -Recurse -Force
+}
+
+$builtNpmRoot = Join-Path $root "miniprogram_npm"
+if (Test-Path $builtNpmRoot) {
+  Get-ChildItem -Path $builtNpmRoot -Recurse -File -Include *.map,*.d.ts | ForEach-Object {
+    Remove-Item -LiteralPath $_.FullName -Force
+  }
+} else {
+  Write-Host "Tip: After building npm in WeChat DevTools, run this script again to fix @tencentcloud/lite-chat/basic.js."
+}
+
+Write-Host "TUICallKit sync completed. Next, open WeChat DevTools and run 'Tools -> Build npm'."

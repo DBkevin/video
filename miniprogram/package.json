@@ -4,9 +4,12 @@
   "version": "0.1.0",
   "description": "微信小程序视频面诊最小联调工程",
   "scripts": {
+    "postinstall": "node ./scripts/fix-tuicallkit-package.js",
+    "fix:tuicallkit-package": "node ./scripts/fix-tuicallkit-package.js",
     "sync:tuicallkit": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-tuicallkit.ps1"
   },
   "dependencies": {
-    "@trtc/calls-uikit-wx": "^2.9.0"
+    "@trtc/call-engine-lite-wx": "^3.4.13",
+    "@trtc/calls-uikit-wx": "latest"
   }
 }
