@@ -170,12 +170,35 @@ func (s *AuthService) WXLogin(ctx context.Context, req WXLoginRequest) (*LoginRe
 		}
 
 		if err := s.userRepo.Create(user); err != nil {
+			log.Printf("warn: wechat wx-login create user failed: openid=%s mobile=%s err=%v", wxResult.OpenID, user.Mobile, err)
 			handledErr := HandleDBError(err, "微信用户创建失败，请稍后重试")
-			// 并发登录时可能已有同一个 openid 被创建，这里回查一次，尽量把登录做成幂等。
-			var queryErr error
-			user, queryErr = s.userRepo.GetByOpenID(wxResult.OpenID)
-			if queryErr != nil {
-				return nil, handledErr
+			// 并发登录，或历史上已经存在被软删除的同一 openid 用户时，
+			// 这里优先回查并自动恢复，尽量把微信登录做成幂等。
+			existingUser, queryErr := s.userRepo.GetByOpenIDUnscoped(wxResult.OpenID)
+			if queryErr == nil {
+				if existingUser.DeletedAt.Valid {
+					if err := s.userRepo.Restore(existingUser.ID); err != nil {
+						return nil, err
+					}
+					existingUser.DeletedAt = gorm.DeletedAt{}
+				}
+
+				user = existingUser
+			} else {
+				// 如果不是 openid 冲突，再尝试按占位手机号回查，兼容历史异常数据或并发创建场景。
+				existingUser, queryErr = s.userRepo.GetByMobileUnscoped(user.Mobile)
+				if queryErr != nil {
+					return nil, handledErr
+				}
+
+				if existingUser.DeletedAt.Valid {
+					if err := s.userRepo.Restore(existingUser.ID); err != nil {
+						return nil, err
+					}
+					existingUser.DeletedAt = gorm.DeletedAt{}
+				}
+
+				user = existingUser
 			}
 		}
 	}

@@ -34,9 +34,25 @@ func (r *UserRepository) GetByMobile(mobile string) (*model.User, error) {
 	return &user, nil
 }
 
+func (r *UserRepository) GetByMobileUnscoped(mobile string) (*model.User, error) {
+	var user model.User
+	if err := r.db.Unscoped().Where("mobile = ?", mobile).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
 func (r *UserRepository) GetByOpenID(openID string) (*model.User, error) {
 	var user model.User
 	if err := r.db.Where("openid = ?", openID).First(&user).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (r *UserRepository) GetByOpenIDUnscoped(openID string) (*model.User, error) {
+	var user model.User
+	if err := r.db.Unscoped().Where("openid = ?", openID).First(&user).Error; err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -48,4 +64,8 @@ func (r *UserRepository) Create(user *model.User) error {
 
 func (r *UserRepository) Update(user *model.User) error {
 	return r.db.Save(user).Error
+}
+
+func (r *UserRepository) Restore(userID uint64) error {
+	return r.db.Unscoped().Model(&model.User{}).Where("id = ?", userID).Update("deleted_at", nil).Error
 }
