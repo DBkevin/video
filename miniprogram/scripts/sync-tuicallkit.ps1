@@ -2,9 +2,9 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $fixPackageScript = Join-Path $PSScriptRoot "fix-tuicallkit-package.js"
+$fixWasmScript = Join-Path $PSScriptRoot "fix-call-engine-wasm.js"
 $sourcePackage = Join-Path $root "node_modules\@trtc\calls-uikit-wx"
 $targetKit = Join-Path $root "TUICallKit"
-$sourceWasm = Join-Path $root "node_modules\@trtc\call-engine-lite-wx\dist\RTCCallEngine.wasm.br"
 $targetStatic = Join-Path $root "static"
 $builtLiteChat = Join-Path $root "miniprogram_npm\@tencentcloud\lite-chat"
 $sourceBasicJs = Join-Path $root "node_modules\@tencentcloud\lite-chat\basic.js"
@@ -19,17 +19,14 @@ if (Test-Path $fixPackageScript) {
   node $fixPackageScript
 }
 
+if (Test-Path $fixWasmScript) {
+  Write-Host "Patching @trtc/call-engine-lite-wx wasm assets..."
+  node $fixWasmScript
+}
+
 Write-Host "Syncing TUICallKit source code..."
 New-Item -ItemType Directory -Force -Path $targetKit | Out-Null
 Copy-Item -Path (Join-Path $sourcePackage "*") -Destination $targetKit -Recurse -Force
-
-if (Test-Path $sourceWasm) {
-  Write-Host "Syncing RTCCallEngine.wasm.br..."
-  New-Item -ItemType Directory -Force -Path $targetStatic | Out-Null
-  Copy-Item -Path $sourceWasm -Destination (Join-Path $targetStatic "RTCCallEngine.wasm.br") -Force
-} else {
-  Write-Warning "RTCCallEngine.wasm.br not found. Please check if @trtc/call-engine-lite-wx is installed."
-}
 
 if ((Test-Path $builtLiteChat) -and (Test-Path $sourceBasicJs)) {
   Write-Host "Fixing miniprogram_npm/@tencentcloud/lite-chat/basic.js..."
