@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -142,9 +143,12 @@ func (s *AuthService) WXLogin(ctx context.Context, req WXLoginRequest) (*LoginRe
 
 	wxResult, err := s.miniProgramClient.Code2Session(ctx, req.Code)
 	if err != nil {
-		return nil, NewBizError(http.StatusBadRequest, "微信登录失败，请重新进入小程序后重试")
+		// 把微信 code2session 的真实失败原因打到服务端日志里，方便线上定位 appid/secret/code 配置问题。
+		log.Printf("warn: wechat wx-login code2session failed: %v", err)
+		return nil, NewBizError(http.StatusBadRequest, "微信登录失败："+err.Error())
 	}
 	if wxResult.OpenID == "" {
+		log.Printf("warn: wechat wx-login missing openid after code2session")
 		return nil, NewBizError(http.StatusBadRequest, "微信登录失败，未获取到用户标识")
 	}
 
