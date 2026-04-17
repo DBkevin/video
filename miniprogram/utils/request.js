@@ -7,12 +7,36 @@ function buildURL(path) {
   return `${API_BASE_URL}${path}`
 }
 
+function getMiniProgramRuntimeMeta() {
+  try {
+    if (!wx || typeof wx.getAccountInfoSync !== 'function') {
+      return null
+    }
+
+    const info = wx.getAccountInfoSync() || {}
+    const miniProgram = info.miniProgram || {}
+    return {
+      appId: miniProgram.appId || '',
+      envVersion: miniProgram.envVersion || ''
+    }
+  } catch (err) {
+    return null
+  }
+}
+
 function buildNetworkFailureMessage(err, finalURL, method) {
   const rawMessage = (err && err.errMsg) ? err.errMsg : '网络请求失败'
+  const runtimeMeta = getMiniProgramRuntimeMeta()
   const lines = [
     `网络请求失败：${method} ${finalURL}`,
-    `原始错误：${rawMessage}`
+    `原始错误：${rawMessage}`,
+    `请求基地址：${API_BASE_URL}`
   ]
+
+  if (runtimeMeta) {
+    lines.push(`当前小程序 AppID：${runtimeMeta.appId || 'unknown'}`)
+    lines.push(`当前环境版本：${runtimeMeta.envVersion || 'unknown'}`)
+  }
 
   if (/url not in domain list/i.test(rawMessage)) {
     lines.push('可能原因：微信小程序 request 合法域名校验未通过。')
