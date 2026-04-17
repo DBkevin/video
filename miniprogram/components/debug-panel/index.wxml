@@ -1,6 +1,9 @@
 <view class="debug-panel">
   <view class="debug-panel__header">
-    <view class="debug-panel__title">调试日志 {{pageName ? `· ${pageName}` : ''}}</view>
+    <view class="debug-panel__title">
+      调试日志
+      <text wx:if="{{pageName}}"> · {{pageName}}</text>
+    </view>
     <view class="debug-panel__actions">
       <text class="debug-panel__action" bindtap="handleToggle">{{expanded ? '收起' : '展开'}}</text>
       <text class="debug-panel__action" bindtap="handleCopy">复制</text>
