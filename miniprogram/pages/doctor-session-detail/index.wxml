@@ -68,8 +68,6 @@
 
     <button class="button secondary" loading="{{busyAction}}" bindtap="handleGenerateShare">生成分享入口</button>
     <button class="button secondary" wx:if="{{sharePath}}" open-type="share">发送给顾客</button>
-    <button class="button secondary" bindtap="handleCopySharePath">复制分享路径</button>
-    <button class="button secondary" wx:if="{{recordingTask && recordingTask.video_url}}" bindtap="handleOpenPlayback">查看回放</button>
     <button class="button secondary" wx:if="{{recordingTask && recordingTask.video_url}}" bindtap="handleCopyPlaybackURL">复制回放链接</button>
     <button class="button" disabled="{{!canStart || busyAction}}" loading="{{busyAction}}" bindtap="handleStartConsult">进入视频面诊</button>
     <button class="button warn" disabled="{{busyAction || !session || session.status === 'finished' || session.status === 'cancelled' || session.status === 'expired'}}" loading="{{busyAction}}" bindtap="handleCancelSession">取消当前会话</button>

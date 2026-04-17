@@ -125,20 +125,6 @@ Page({
     }
   },
 
-  handleCopySharePath() {
-    if (!this.data.sharePath) {
-      wx.showToast({
-        title: '请先生成分享入口',
-        icon: 'none'
-      })
-      return
-    }
-
-    wx.setClipboardData({
-      data: this.data.sharePath
-    })
-  },
-
   onShareAppMessage() {
     const sharePath = this.data.sharePath || ''
     const doctor = this.data.doctor || {}
@@ -213,21 +199,6 @@ Page({
     }
   },
 
-  handleOpenPlayback() {
-    const recordingTask = this.data.recordingTask
-    if (!recordingTask || !recordingTask.video_url) {
-      wx.showToast({
-        title: '回放文件仍在处理中',
-        icon: 'none'
-      })
-      return
-    }
-
-    wx.navigateTo({
-      url: `/pages/recording-playback/index?videoUrl=${encodeURIComponent(recordingTask.video_url)}&sessionNo=${encodeURIComponent((this.data.session && this.data.session.session_no) || '')}`
-    })
-  },
-
   handleCopyPlaybackURL() {
     const recordingTask = this.data.recordingTask
     if (!recordingTask || !recordingTask.video_url) {
@@ -260,7 +231,7 @@ Page({
       },
       finished: {
         label: '已完成',
-        hint: task.video_url ? '录制文件已生成，可直接查看回放或复制回放链接。' : '录制任务已完成，正在等待回放地址回传。'
+        hint: task.video_url ? '录制文件已生成，可复制回放链接到浏览器中查看。' : '录制任务已完成，正在等待回放地址回传。'
       },
       failed: {
         label: '录制失败',
