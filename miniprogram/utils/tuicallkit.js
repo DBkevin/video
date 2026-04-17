@@ -374,7 +374,8 @@ async function startVideoCall(adapter, runtime) {
     throw new Error('当前会话缺少对方 RTC 标识，医生暂时无法发起视频呼叫')
   }
 
-  await invokeWithPayloadVariants(adapter.callAPI, 'calls', [
+  let callRejectedError = null
+  const callPromise = invokeWithPayloadVariants(adapter.callAPI, 'calls', [
     [{
       userIDList: [runtime.peerUserId],
       type: VIDEO_CALL_TYPE,
@@ -386,9 +387,31 @@ async function startVideoCall(adapter, runtime) {
       roomID: runtime.roomId
     }],
     [[runtime.peerUserId], VIDEO_CALL_TYPE, runtime.roomId]
-  ])
+  ]).catch((err) => {
+    callRejectedError = err
+    throw err
+  })
 
-  const currentStatus = await waitForCallStatus(adapter, 8000)
+  // 小程序真机上，官方 SDK 的 calls() 在拨号过程中可能长时间处于 pending，
+  // 如果直接 await，会让医生页一直卡在“正在初始化 TUICallKit”。
+  // 这里改成并行等待：只要 SDK 的呼叫状态先进入 calling/connected，就立即放行到官方通话页。
+  const startupResult = await Promise.race([
+    callPromise.then(() => ({ type: 'call-resolved' })),
+    waitForCallStatus(adapter, 8000).then((status) => ({ type: 'status', status }))
+  ]).catch((err) => {
+    throw err
+  })
+
+  if (startupResult && startupResult.type === 'status' && isActiveCallStatus(adapter, startupResult.status)) {
+    navigateToGlobalCallPage()
+    return
+  }
+
+  if (callRejectedError) {
+    throw callRejectedError
+  }
+
+  const currentStatus = await waitForCallStatus(adapter, 2000)
   if (!isActiveCallStatus(adapter, currentStatus)) {
     throw buildCallStartupError(adapter, runtime, currentStatus)
   }

@@ -22,6 +22,12 @@ Page({
     this.role = options.role || ''
     this.sessionId = Number(options.sessionId || 0)
     this.hasHandledLeave = false
+    this.setData({
+      role: this.role,
+      statusText: this.role === 'doctor'
+        ? '正在初始化 TUICallKit 并发起视频呼叫...'
+        : '正在初始化 TUICallKit，请保持当前页面等待医生接入...'
+    })
     this.bootstrap()
   },
 
