@@ -78,4 +78,5 @@
         : '页面会每 3 秒轮询一次会话状态，顾客加入后即可开始面诊。'}}
     </view>
   </view>
+  <debug-panel page-name="doctor-session-detail"></debug-panel>
 </view>

@@ -1,0 +1,26 @@
+<view class="debug-panel">
+  <view class="debug-panel__header">
+    <view class="debug-panel__title">调试日志 {{pageName ? `· ${pageName}` : ''}}</view>
+    <view class="debug-panel__actions">
+      <text class="debug-panel__action" bindtap="handleToggle">{{expanded ? '收起' : '展开'}}</text>
+      <text class="debug-panel__action" bindtap="handleCopy">复制</text>
+      <text class="debug-panel__action warn" bindtap="handleClear">清空</text>
+    </view>
+  </view>
+
+  <view wx:if="{{expanded}}" class="debug-panel__body">
+    <view wx:if="{{!logs.length}}" class="debug-panel__empty">当前还没有调试日志。</view>
+
+    <block wx:for="{{logs}}" wx:key="id">
+      <view class="debug-log-item {{item.levelClass}}">
+        <view class="debug-log-item__meta">
+          <text>[{{item.time}}]</text>
+          <text>[{{item.level}}]</text>
+          <text>[{{item.source}}]</text>
+        </view>
+        <view class="debug-log-item__message">{{item.message}}</view>
+        <view wx:if="{{item.detail}}" class="debug-log-item__detail">{{item.detail}}</view>
+      </view>
+    </block>
+  </view>
+</view>

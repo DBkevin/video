@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "创建面诊会话"
+  "navigationBarTitleText": "创建面诊会话",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
 }

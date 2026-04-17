@@ -18,4 +18,5 @@
 
     <button class="button" loading="{{loading}}" bindtap="handleLogin">登录并进入创建页</button>
   </view>
+  <debug-panel page-name="doctor-login"></debug-panel>
 </view>

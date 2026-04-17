@@ -1,4 +1,5 @@
 const { API_BASE_URL } = require('./config')
+const debugLog = require('./debug-log')
 
 function buildURL(path) {
   if (/^https?:\/\//.test(path)) {
@@ -82,6 +83,14 @@ function request(options) {
     header = {}
   } = options
   const finalURL = buildURL(url)
+  const requestMeta = {
+    method,
+    url: finalURL,
+    hasToken: !!token,
+    dataKeys: data && typeof data === 'object' ? Object.keys(data) : []
+  }
+
+  debugLog.info('request', `发起请求 ${method} ${finalURL}`, requestMeta)
 
   return new Promise((resolve, reject) => {
     wx.request({
@@ -97,6 +106,12 @@ function request(options) {
       success(res) {
         const body = res.data || {}
         const message = body.message || `请求失败(${res.statusCode})`
+
+        debugLog.info('request', `收到响应 ${method} ${finalURL}`, {
+          statusCode: res.statusCode,
+          bodyCode: body.code,
+          message
+        })
 
         if (res.statusCode >= 200 && res.statusCode < 300 && body.code >= 200 && body.code < 300) {
           const payload = body.data
@@ -118,9 +133,15 @@ function request(options) {
           return
         }
 
+        debugLog.warn('request', `业务请求失败 ${method} ${finalURL}`, {
+          statusCode: res.statusCode,
+          bodyCode: body.code,
+          message
+        })
         reject(new Error(buildBusinessFailureMessage(message, finalURL, method, res.statusCode)))
       },
       fail(err) {
+        debugLog.error('request', `网络请求失败 ${method} ${finalURL}`, err && err.errMsg ? err.errMsg : err)
         reject(new Error(buildNetworkFailureMessage(err, finalURL, method)))
       }
     })

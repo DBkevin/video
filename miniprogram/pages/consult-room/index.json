@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "视频面诊"
+  "navigationBarTitleText": "视频面诊",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
 }

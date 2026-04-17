@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "医生登录"
+  "navigationBarTitleText": "医生登录",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
 }

@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "顾客进入页"
+  "navigationBarTitleText": "顾客进入页",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
 }

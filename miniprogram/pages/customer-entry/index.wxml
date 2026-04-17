@@ -25,4 +25,5 @@
 
     <button wx:if="{{errorMessage}}" class="button" bindtap="handleRetry">重新进入</button>
   </view>
+  <debug-panel page-name="customer-entry"></debug-panel>
 </view>

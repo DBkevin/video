@@ -34,4 +34,5 @@
 
     <button class="button secondary" bindtap="handleBackHome">返回上一页</button>
   </view>
+  <debug-panel page-name="consult-finish"></debug-panel>
 </view>

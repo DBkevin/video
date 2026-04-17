@@ -1,0 +1,97 @@
+.debug-panel {
+  margin-top: 28rpx;
+  border-radius: 24rpx;
+  background: #0f172a;
+  color: #e2e8f0;
+  overflow: hidden;
+}
+
+.debug-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 24rpx;
+  background: rgba(15, 23, 42, 0.96);
+}
+
+.debug-panel__title {
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.debug-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  flex-shrink: 0;
+}
+
+.debug-panel__action {
+  font-size: 22rpx;
+  color: #7dd3fc;
+}
+
+.debug-panel__action.warn {
+  color: #fda4af;
+}
+
+.debug-panel__body {
+  max-height: 720rpx;
+  padding: 0 24rpx 24rpx;
+  box-sizing: border-box;
+}
+
+.debug-panel__empty {
+  padding-top: 12rpx;
+  font-size: 22rpx;
+  color: #94a3b8;
+}
+
+.debug-log-item {
+  margin-top: 16rpx;
+  padding: 18rpx 18rpx 20rpx;
+  border-radius: 18rpx;
+  background: rgba(15, 23, 42, 0.6);
+  border: 2rpx solid rgba(148, 163, 184, 0.18);
+}
+
+.debug-log-item__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  font-size: 20rpx;
+  color: #94a3b8;
+}
+
+.debug-log-item__message {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  line-height: 1.6;
+  color: #f8fafc;
+  word-break: break-all;
+}
+
+.debug-log-item__detail {
+  margin-top: 12rpx;
+  padding-top: 12rpx;
+  border-top: 2rpx dashed rgba(148, 163, 184, 0.22);
+  font-size: 22rpx;
+  line-height: 1.6;
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.debug-log-info {
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+.debug-log-warn {
+  border-color: rgba(250, 204, 21, 0.28);
+}
+
+.debug-log-error {
+  border-color: rgba(251, 113, 133, 0.3);
+}

@@ -1,5 +1,6 @@
 const auth = require('../../utils/auth')
 const consult = require('../../utils/consult')
+const debugLog = require('../../utils/debug-log')
 
 Page({
   data: {
@@ -16,10 +17,16 @@ Page({
 
   onLoad(options) {
     this.sessionId = Number(options.id || options.sessionId || 0)
+    debugLog.info('doctor-session-detail', '医生会话详情页加载', {
+      sessionId: this.sessionId
+    })
     this.syncShareMenu('')
   },
 
   onShow() {
+    debugLog.info('doctor-session-detail', '医生会话详情页显示', {
+      sessionId: this.sessionId
+    })
     this.loadSession()
     this.startPolling()
   },
@@ -38,6 +45,7 @@ Page({
 
   async loadSession() {
     if (!this.sessionId) {
+      debugLog.error('doctor-session-detail', '缺少会话 ID，无法加载详情')
       this.setData({
         loading: false,
         errorMessage: '缺少会话 ID，无法查看会话详情。'
@@ -47,6 +55,7 @@ Page({
 
     const doctorToken = this.getDoctorToken()
     if (!doctorToken) {
+      debugLog.warn('doctor-session-detail', '缺少医生登录态，跳回登录页')
       wx.reLaunch({
         url: '/pages/doctor-login/index'
       })
@@ -56,6 +65,15 @@ Page({
     try {
       const result = await consult.getConsultSession(this.sessionId, doctorToken)
       const recordingTask = this.decorateRecordingTask(result.recording_task)
+      const previousSession = this.data.session
+      if (!previousSession || previousSession.status !== result.session.status || (!!this.data.customer) !== (!!result.customer)) {
+        debugLog.info('doctor-session-detail', '会话状态已刷新', {
+          sessionId: result.session.id,
+          status: result.session.status,
+          hasCustomer: !!result.customer,
+          canStart: !!result.can_start
+        })
+      }
 
       this.setData({
         loading: false,
@@ -74,6 +92,7 @@ Page({
         this.stopPolling()
       }
     } catch (err) {
+      debugLog.error('doctor-session-detail', '获取会话详情失败', err)
       this.setData({
         loading: false,
         errorMessage: err.message || '会话信息获取失败'
@@ -83,6 +102,9 @@ Page({
 
   startPolling() {
     this.stopPolling()
+    debugLog.info('doctor-session-detail', '开始轮询会话状态', {
+      sessionId: this.sessionId
+    })
 
     this.timer = setInterval(() => {
       this.loadSession()
@@ -93,6 +115,9 @@ Page({
     if (this.timer) {
       clearInterval(this.timer)
       this.timer = null
+      debugLog.info('doctor-session-detail', '停止轮询会话状态', {
+        sessionId: this.sessionId
+      })
     }
   },
 
@@ -105,6 +130,9 @@ Page({
     this.setData({ busyAction: true, errorMessage: '' })
 
     try {
+      debugLog.info('doctor-session-detail', '开始生成分享入口', {
+        sessionId: this.sessionId
+      })
       const result = await consult.shareConsultSession(this.sessionId, doctorToken)
       this.setData({
         sharePath: result.share_url_path,
@@ -115,8 +143,13 @@ Page({
         title: '分享入口已生成',
         icon: 'success'
       })
+      debugLog.info('doctor-session-detail', '分享入口生成成功', {
+        sessionId: this.sessionId,
+        sharePath: result.share_url_path || ''
+      })
       this.loadSession()
     } catch (err) {
+      debugLog.error('doctor-session-detail', '生成分享入口失败', err)
       this.setData({
         errorMessage: err.message || '生成分享入口失败'
       })
@@ -130,6 +163,10 @@ Page({
     const doctor = this.data.doctor || {}
     const session = this.data.session || {}
 
+    debugLog.info('doctor-session-detail', '医生触发微信分享', {
+      sessionId: session.id || 0,
+      hasSharePath: !!sharePath
+    })
     return {
       // 真正发送给顾客的是微信小程序卡片，而不是把内部 path 当普通字符串复制出去。
       title: `${doctor.name || '医生'}邀请您进入视频面诊`,
@@ -147,7 +184,14 @@ Page({
     this.setData({ busyAction: true, errorMessage: '' })
 
     try {
+      debugLog.info('doctor-session-detail', '医生开始面诊，准备请求后端 start', {
+        sessionId: this.sessionId
+      })
       const result = await consult.startConsultSession(this.sessionId, doctorToken)
+      debugLog.info('doctor-session-detail', '医生开始面诊成功，准备进入通话页', {
+        sessionId: result.session && result.session.id ? result.session.id : 0,
+        roomId: result.rtc && result.rtc.room_id ? result.rtc.room_id : 0
+      })
 
       consult.saveConsultRuntime({
         session: result.session,
@@ -164,6 +208,7 @@ Page({
         url: `/pages/consult-room/index?sessionId=${result.session.id}&role=doctor`
       })
     } catch (err) {
+      debugLog.error('doctor-session-detail', '医生开始面诊失败', err)
       this.setData({
         errorMessage: err.message || '开始面诊失败'
       })
@@ -181,6 +226,9 @@ Page({
     this.setData({ busyAction: true, errorMessage: '' })
 
     try {
+      debugLog.info('doctor-session-detail', '医生取消会话', {
+        sessionId: this.sessionId
+      })
       const result = await consult.cancelConsultSession(this.sessionId, doctorToken)
       consult.saveFinishResult({
         session: result.session,
@@ -191,6 +239,7 @@ Page({
         url: `/pages/consult-finish/index?sessionId=${result.session.id}&role=doctor&status=cancelled`
       })
     } catch (err) {
+      debugLog.error('doctor-session-detail', '医生取消会话失败', err)
       this.setData({
         errorMessage: err.message || '取消会话失败'
       })
@@ -211,6 +260,9 @@ Page({
 
     wx.setClipboardData({
       data: recordingTask.video_url
+    })
+    debugLog.info('doctor-session-detail', '已复制回放链接', {
+      sessionId: this.sessionId
     })
   },
 

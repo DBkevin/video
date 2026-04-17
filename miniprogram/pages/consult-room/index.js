@@ -1,6 +1,7 @@
 const auth = require('../../utils/auth')
 const consult = require('../../utils/consult')
 const tuicallkit = require('../../utils/tuicallkit')
+const debugLog = require('../../utils/debug-log')
 
 Page({
   data: {
@@ -22,6 +23,10 @@ Page({
     this.role = options.role || ''
     this.sessionId = Number(options.sessionId || 0)
     this.hasHandledLeave = false
+    debugLog.info('consult-room', '通话页加载', {
+      role: this.role,
+      sessionId: this.sessionId
+    })
     this.setData({
       role: this.role,
       statusText: this.role === 'doctor'
@@ -32,6 +37,10 @@ Page({
   },
 
   onUnload() {
+    debugLog.info('consult-room', '通话页卸载', {
+      role: this.data.role || this.role || '',
+      sessionId: this.sessionId
+    })
     if (this.data.role === 'customer' && !this.hasHandledLeave) {
       this.performCustomerLeave(true)
     } else {
@@ -42,6 +51,7 @@ Page({
   async bootstrap() {
     const runtime = consult.getConsultRuntime()
     if (!runtime || !runtime.session) {
+      debugLog.error('consult-room', '缺少会话上下文，无法初始化通话页')
       this.setData({
         loading: false,
         errorMessage: '缺少当前会话上下文，请从顾客入口页或医生详情页重新进入。'
@@ -52,6 +62,13 @@ Page({
     try {
       const peerInfo = this.buildPeerInfo(runtime)
       const peerUserId = this.buildPeerUserID(runtime)
+      debugLog.info('consult-room', '开始初始化通话页运行时', {
+        role: runtime.role,
+        sessionId: runtime.session.id,
+        roomId: runtime.rtc && runtime.rtc.room_id ? runtime.rtc.room_id : 0,
+        rtcUserId: runtime.rtc && runtime.rtc.rtc_user_id ? runtime.rtc.rtc_user_id : '',
+        peerUserId
+      })
       this.setData({
         statusText: runtime.role === 'doctor' ? '正在初始化 TUICallKit 并发起视频呼叫...' : '正在初始化 TUICallKit，请保持当前页面等待医生接入...'
       })
@@ -71,6 +88,11 @@ Page({
           : ''
       })
 
+      debugLog.info('consult-room', 'TUICallKit 初始化完成', {
+        role: runtime.role,
+        provider: result.provider,
+        waitingForAnswer: !!result.waitingForAnswer
+      })
       this.setData({
         loading: false,
         role: runtime.role,
@@ -85,6 +107,7 @@ Page({
         peerName: peerInfo.name
       })
     } catch (err) {
+      debugLog.error('consult-room', '初始化通话页失败', err)
       this.setData({
         loading: false,
         errorMessage: err.message || '初始化通话失败'
@@ -125,6 +148,9 @@ Page({
   async handleFinishConsult() {
     const doctorToken = auth.getDoctorToken()
     if (!doctorToken || !this.sessionId) {
+      debugLog.warn('consult-room', '结束面诊时缺少医生登录态', {
+        sessionId: this.sessionId
+      })
       this.setData({
         errorMessage: '缺少医生登录态，无法结束面诊。'
       })
@@ -134,6 +160,9 @@ Page({
     this.setData({ finishLoading: true, errorMessage: '' })
 
     try {
+      debugLog.info('consult-room', '医生点击结束面诊', {
+        sessionId: this.sessionId
+      })
       const result = await consult.finishConsultSession(this.sessionId, doctorToken)
       consult.saveFinishResult(result)
       consult.clearConsultRuntime()
@@ -146,6 +175,7 @@ Page({
         url: `/pages/consult-finish/index?sessionId=${result.session.id}&role=doctor`
       })
     } catch (err) {
+      debugLog.error('consult-room', '结束面诊失败', err)
       this.setData({
         errorMessage: err.message || '结束面诊失败'
       })
@@ -167,6 +197,9 @@ Page({
     const userToken = auth.getUserToken()
 
     if (!silent) {
+      debugLog.info('consult-room', '顾客准备离开当前会话', {
+        sessionId: this.sessionId
+      })
       this.setData({
         leaving: true,
         errorMessage: '',
@@ -181,8 +214,13 @@ Page({
           session: result.session,
           record: null
         })
+        debugLog.info('consult-room', '顾客离开会话成功', {
+          sessionId: this.sessionId,
+          status: result.session && result.session.status ? result.session.status : ''
+        })
       }
     } catch (err) {
+      debugLog.error('consult-room', '顾客离开会话失败', err)
       if (!silent) {
         this.setData({
           errorMessage: err.message || '离开会话失败'
@@ -193,6 +231,7 @@ Page({
     try {
       await tuicallkit.leaveConsultRoom()
     } catch (err) {
+      debugLog.warn('consult-room', '退出 TUICallKit 失败，但不阻断页面关闭', err)
       // SDK 退出失败不阻断页面关闭流程。
     }
 
@@ -206,6 +245,9 @@ Page({
   },
 
   handleBackToDoctorDetail() {
+    debugLog.info('consult-room', '医生返回会话详情页', {
+      sessionId: this.sessionId
+    })
     wx.redirectTo({
       url: `/pages/doctor-session-detail/index?id=${this.sessionId || 0}`
     })

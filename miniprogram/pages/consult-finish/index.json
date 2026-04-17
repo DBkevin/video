@@ -1,3 +1,6 @@
 {
-  "navigationBarTitleText": "面诊结束"
+  "navigationBarTitleText": "面诊结束",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
 }
