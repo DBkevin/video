@@ -1,0 +1,40 @@
+<view class="page-shell">
+  <view class="card">
+    <view class="badge">员工会话详情</view>
+    <view class="title">顾客入口与回放跟踪</view>
+    <view wx:if="{{loading}}" class="hint">正在加载会话详情...</view>
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <block wx:if="{{!loading && session}}">
+      <view class="item">会话编号：{{session.session_no}}</view>
+      <view class="item">状态：{{session.status}}</view>
+      <view class="item">发起员工：{{operatorEmployee.real_name || '-'}}</view>
+      <view class="item">医生：{{doctor.name || '-'}}</view>
+      <view class="item">顾客：{{session.customer_name || customer.nickname || '未填写'}}</view>
+      <view class="item">顾客手机号：{{session.customer_mobile || customer.mobile || '未填写'}}</view>
+      <view class="item">顾客备注：{{session.customer_remark || '未填写'}}</view>
+
+      <view class="share-box">
+        <view class="label">顾客入口路径</view>
+        <view class="payload">{{sharePath || '尚未生成'}}</view>
+      </view>
+
+      <view class="actions">
+        <button class="primary-btn" open-type="share">发送给顾客</button>
+        <button class="secondary-btn" bindtap="handleCopySharePath">复制入口路径</button>
+        <button class="secondary-btn" bindtap="handleGoList">返回历史列表</button>
+        <button class="secondary-btn" bindtap="handleCreateNew">再发起一单</button>
+      </view>
+
+      <block wx:if="{{recordingTask}}">
+        <view class="record-card">
+          <view class="record-title">录制状态：{{recordingTask.status_label}}</view>
+          <view class="record-hint">{{recordingTask.status_hint}}</view>
+          <button class="secondary-btn" bindtap="handleCopyPlaybackURL">复制回放链接</button>
+        </view>
+      </block>
+    </block>
+  </view>
+
+  <debug-panel page-name="employee-session-detail"></debug-panel>
+</view>

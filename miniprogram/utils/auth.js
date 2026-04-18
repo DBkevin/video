@@ -5,6 +5,10 @@ const USER_TOKEN_KEY = 'user_access_token'
 const USER_PROFILE_KEY = 'current_user_profile'
 const DOCTOR_TOKEN_KEY = 'doctor_access_token'
 const DOCTOR_PROFILE_KEY = 'doctor_profile'
+const EMPLOYEE_TOKEN_KEY = 'employee_access_token'
+const EMPLOYEE_PROFILE_KEY = 'employee_profile'
+const EMPLOYEE_BIND_STATUS_KEY = 'employee_bind_status'
+const EMPLOYEE_BIND_REQUEST_KEY = 'employee_bind_request'
 
 function doWXLogin() {
   return new Promise((resolve, reject) => {
@@ -49,6 +53,27 @@ async function loginByWeChat(profile = {}) {
   return result
 }
 
+async function loginEmployeeByWeChat(profile = {}) {
+  debugLog.info('auth', '开始执行员工微信登录')
+  const code = await doWXLogin()
+  const result = await request({
+    url: '/employee/auth/wx-login',
+    method: 'POST',
+    data: {
+      code,
+      nickname: profile.nickname || '',
+      avatar_url: profile.avatar_url || ''
+    }
+  })
+
+  setEmployeeAuthState(result)
+  debugLog.info('auth', '员工微信登录完成', {
+    role: result.role || '',
+    bindingStatus: result.binding_status || ''
+  })
+  return result
+}
+
 function getUserToken() {
   return wx.getStorageSync(USER_TOKEN_KEY) || ''
 }
@@ -59,6 +84,22 @@ function getDoctorToken() {
 
 function getDoctorProfile() {
   return wx.getStorageSync(DOCTOR_PROFILE_KEY) || null
+}
+
+function getEmployeeToken() {
+  return wx.getStorageSync(EMPLOYEE_TOKEN_KEY) || ''
+}
+
+function getEmployeeProfile() {
+  return wx.getStorageSync(EMPLOYEE_PROFILE_KEY) || null
+}
+
+function getEmployeeBindStatus() {
+  return wx.getStorageSync(EMPLOYEE_BIND_STATUS_KEY) || ''
+}
+
+function getEmployeeBindRequest() {
+  return wx.getStorageSync(EMPLOYEE_BIND_REQUEST_KEY) || null
 }
 
 async function loginDoctor(payload) {
@@ -93,12 +134,34 @@ function clearDoctorLogin() {
   debugLog.info('auth', '医生登录态已清除')
 }
 
+function setEmployeeAuthState(payload = {}) {
+  wx.setStorageSync(EMPLOYEE_TOKEN_KEY, payload.access_token || '')
+  wx.setStorageSync(EMPLOYEE_PROFILE_KEY, payload.employee || null)
+  wx.setStorageSync(EMPLOYEE_BIND_STATUS_KEY, payload.binding_status || '')
+  wx.setStorageSync(EMPLOYEE_BIND_REQUEST_KEY, payload.bind_request || null)
+}
+
+function clearEmployeeLogin() {
+  wx.removeStorageSync(EMPLOYEE_TOKEN_KEY)
+  wx.removeStorageSync(EMPLOYEE_PROFILE_KEY)
+  wx.removeStorageSync(EMPLOYEE_BIND_STATUS_KEY)
+  wx.removeStorageSync(EMPLOYEE_BIND_REQUEST_KEY)
+  debugLog.info('auth', '员工登录态已清除')
+}
+
 module.exports = {
   loginByWeChat,
+  loginEmployeeByWeChat,
   loginDoctor,
   getUserToken,
   getDoctorToken,
   getDoctorProfile,
+  getEmployeeToken,
+  getEmployeeProfile,
+  getEmployeeBindStatus,
+  getEmployeeBindRequest,
   setDoctorToken,
-  clearDoctorLogin
+  clearDoctorLogin,
+  setEmployeeAuthState,
+  clearEmployeeLogin
 }

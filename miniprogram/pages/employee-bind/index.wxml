@@ -1,0 +1,49 @@
+<view class="page-shell">
+  <view class="hero-card">
+    <view class="badge">员工绑定页</view>
+    <view class="title">员工固定二维码绑定入口</view>
+    <view class="subtitle">固定二维码统一指向这个页面，员工扫码后提交真实姓名，后台审核通过后即可发起视频面诊。</view>
+
+    <view wx:if="{{loading}}" class="loading">正在识别员工微信身份...</view>
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <block wx:if="{{!loading && bindingStatus === 'bound'}}">
+      <view class="info-item">已绑定员工：{{employee.real_name}}</view>
+      <view class="info-item">员工编号：{{employee.employee_code || '未填写'}}</view>
+      <view class="info-item">手机号：{{employee.mobile || '未填写'}}</view>
+      <view class="actions">
+        <button class="primary-btn" bindtap="handleGoCreateSession">去发起视频面诊</button>
+        <button class="secondary-btn" bindtap="handleGoSessionList">查看历史会话</button>
+      </view>
+    </block>
+
+    <block wx:if="{{!loading && bindingStatus === 'pending'}}">
+      <view class="info-item">当前状态：审核中</view>
+      <view class="info-item">申请姓名：{{bindRequest.real_name}}</view>
+      <view class="info-item">申请编号：{{bindRequest.employee_code || '未填写'}}</view>
+      <button class="secondary-btn" bindtap="handleRefreshStatus">刷新审核状态</button>
+    </block>
+
+    <block wx:if="{{!loading && bindingStatus === 'rejected'}}">
+      <view class="error">上次申请已被驳回：{{bindRequest.reject_reason || '未填写原因'}}</view>
+    </block>
+
+    <block wx:if="{{!loading && (bindingStatus === 'unbound' || bindingStatus === 'rejected' || !bindingStatus)}}">
+      <view class="form-item">
+        <view class="label">真实姓名</view>
+        <input class="input" placeholder="请输入真实姓名" value="{{realName}}" bindinput="handleRealNameInput" />
+      </view>
+      <view class="form-item">
+        <view class="label">手机号</view>
+        <input class="input" placeholder="请输入手机号，可留空" value="{{mobile}}" bindinput="handleMobileInput" />
+      </view>
+      <view class="form-item">
+        <view class="label">员工编号</view>
+        <input class="input" placeholder="请输入员工编号，可留空" value="{{employeeCode}}" bindinput="handleEmployeeCodeInput" />
+      </view>
+      <button class="primary-btn" loading="{{submitting}}" bindtap="handleSubmitBindRequest">提交绑定申请</button>
+    </block>
+  </view>
+
+  <debug-panel page-name="employee-bind"></debug-panel>
+</view>

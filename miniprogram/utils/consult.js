@@ -14,6 +14,60 @@ function createConsultSession(accessToken, expireMinutes = 120) {
   })
 }
 
+function getEmployeeBindStatus(accessToken) {
+  return request({
+    url: '/employee/bind-status',
+    token: accessToken
+  })
+}
+
+function submitEmployeeBindRequest(accessToken, payload = {}) {
+  return request({
+    url: '/employee/bind-request',
+    method: 'POST',
+    token: accessToken,
+    data: payload
+  })
+}
+
+function getEmployeeDoctors(accessToken) {
+  return request({
+    url: '/employee/doctors',
+    token: accessToken
+  })
+}
+
+function createEmployeeConsultSession(accessToken, payload = {}) {
+  return request({
+    url: '/employee/consult-sessions',
+    method: 'POST',
+    token: accessToken,
+    data: payload
+  })
+}
+
+function listEmployeeConsultSessions(accessToken, query = {}) {
+  const params = new URLSearchParams()
+  Object.keys(query || {}).forEach((key) => {
+    const value = query[key]
+    if (value !== undefined && value !== null && value !== '') {
+      params.append(key, String(value))
+    }
+  })
+
+  return request({
+    url: `/employee/consult-sessions${params.toString() ? `?${params.toString()}` : ''}`,
+    token: accessToken
+  })
+}
+
+function getEmployeeConsultSession(sessionId, accessToken) {
+  return request({
+    url: `/employee/consult-sessions/${sessionId}`,
+    token: accessToken
+  })
+}
+
 function getConsultEntry(shareToken) {
   return request({
     url: `/consult-entry?token=${encodeURIComponent(shareToken)}`
@@ -112,6 +166,12 @@ function buildCustomerRTCUserID(sessionId, customerId) {
 
 module.exports = {
   createConsultSession,
+  getEmployeeBindStatus,
+  submitEmployeeBindRequest,
+  getEmployeeDoctors,
+  createEmployeeConsultSession,
+  listEmployeeConsultSessions,
+  getEmployeeConsultSession,
   getConsultEntry,
   joinConsultSession,
   getConsultSession,

@@ -48,6 +48,10 @@ func (m *AuthMiddleware) Handle() gin.HandlerFunc {
 }
 
 func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
+	return m.RequireRoles(role)
+}
+
+func (m *AuthMiddleware) RequireRoles(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claims, ok := GetClaims(c)
 		if !ok {
@@ -56,13 +60,25 @@ func (m *AuthMiddleware) RequireRole(role string) gin.HandlerFunc {
 			return
 		}
 
-		if claims.Role != role {
+		for _, role := range roles {
+			if claims.Role == role {
+				c.Next()
+				return
+			}
+		}
+
+		if len(roles) == 0 {
+			c.Next()
+			return
+		}
+
+		if claims.Role == "" {
 			response.Forbidden(c, "无权限访问当前接口")
 			c.Abort()
 			return
 		}
-
-		c.Next()
+		response.Forbidden(c, "无权限访问当前接口")
+		c.Abort()
 	}
 }
 

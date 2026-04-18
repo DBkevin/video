@@ -1,0 +1,46 @@
+<view class="page-shell">
+  <view class="card">
+    <view class="badge">员工发起页</view>
+    <view class="title">员工协助医生发起视频面诊</view>
+    <view class="subtitle">员工选择自己可服务的医生，填写顾客基础信息后，系统会直接生成顾客分享入口。</view>
+
+    <view wx:if="{{loading}}" class="hint">正在加载可选医生列表...</view>
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <block wx:if="{{!loading}}">
+      <view class="field">
+        <view class="label">当前员工</view>
+        <view class="value">{{employee.real_name || '未绑定员工'}}</view>
+      </view>
+      <view class="field">
+        <view class="label">选择医生</view>
+        <picker mode="selector" range="{{doctors}}" range-key="name" value="{{doctorIndex}}" bindchange="handleDoctorChange">
+          <view class="picker">{{doctors.length ? doctors[doctorIndex].name : '暂无可选医生'}}</view>
+        </picker>
+      </view>
+      <view class="field">
+        <view class="label">顾客姓名</view>
+        <input class="input" placeholder="请输入顾客姓名" value="{{customerName}}" bindinput="handleCustomerNameInput" />
+      </view>
+      <view class="field">
+        <view class="label">顾客手机号</view>
+        <input class="input" placeholder="请输入顾客手机号" value="{{customerMobile}}" bindinput="handleCustomerMobileInput" />
+      </view>
+      <view class="field">
+        <view class="label">顾客备注</view>
+        <textarea class="textarea" placeholder="输入补充说明，例如来源、问诊重点等" value="{{customerRemark}}" bindinput="handleCustomerRemarkInput"></textarea>
+      </view>
+      <view class="field">
+        <view class="label">入口有效期（分钟）</view>
+        <input class="input" type="number" value="{{expireMinutes}}" bindinput="handleExpireInput" />
+      </view>
+      <button class="primary-btn" loading="{{submitting}}" bindtap="handleCreateSession">创建面诊会话</button>
+      <view class="actions">
+        <button class="secondary-btn" bindtap="handleGoSessionList">查看历史会话</button>
+        <button class="secondary-btn" bindtap="handleLogout">退出员工身份</button>
+      </view>
+    </block>
+  </view>
+
+  <debug-panel page-name="employee-create-session"></debug-panel>
+</view>

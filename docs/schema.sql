@@ -38,14 +38,114 @@ CREATE TABLE `doctors` (
   KEY `idx_doctors_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='医生表';
 
+CREATE TABLE `admin_users` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `username` VARCHAR(64) NOT NULL COMMENT '登录用户名',
+  `display_name` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '显示名称',
+  `password_hash` VARCHAR(255) NOT NULL COMMENT 'bcrypt密码哈希',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态：active/disabled',
+  `last_login_at` DATETIME NULL DEFAULT NULL COMMENT '最后登录时间',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_admin_users_username` (`username`),
+  KEY `idx_admin_users_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='后台管理员表';
+
+CREATE TABLE `employees` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `real_name` VARCHAR(64) NOT NULL COMMENT '真实姓名',
+  `mobile` VARCHAR(20) NOT NULL DEFAULT '' COMMENT '手机号',
+  `employee_code` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '员工编号',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态：active/disabled',
+  `remark` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '备注',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_employees_employee_code` (`employee_code`),
+  KEY `idx_employees_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工档案表';
+
+CREATE TABLE `employee_wechat_accounts` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `employee_id` BIGINT UNSIGNED NOT NULL COMMENT '员工ID',
+  `platform` VARCHAR(32) NOT NULL DEFAULT 'wechat_miniprogram' COMMENT '平台标识',
+  `openid` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '微信OpenID',
+  `unionid` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '微信UnionID',
+  `nickname` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '微信昵称',
+  `avatar_url` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '微信头像',
+  `is_primary` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否主微信身份',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态：active/disabled',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_employee_wechat_platform_openid` (`platform`, `openid`),
+  KEY `idx_employee_wechat_accounts_employee_id` (`employee_id`),
+  KEY `idx_employee_wechat_accounts_unionid` (`unionid`),
+  KEY `idx_employee_wechat_accounts_status` (`status`),
+  CONSTRAINT `fk_employee_wechat_accounts_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工微信身份表';
+
+CREATE TABLE `employee_bind_requests` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `platform` VARCHAR(32) NOT NULL DEFAULT 'wechat_miniprogram' COMMENT '平台标识',
+  `openid` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '微信OpenID',
+  `unionid` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '微信UnionID',
+  `nickname` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '微信昵称',
+  `avatar_url` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '微信头像',
+  `real_name` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '申请人填写的真实姓名',
+  `mobile` VARCHAR(20) NOT NULL DEFAULT '' COMMENT '申请人填写的手机号',
+  `employee_code` VARCHAR(32) NOT NULL DEFAULT '' COMMENT '申请人填写的员工编号',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '审核状态：pending/approved/rejected',
+  `employee_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '审核通过后绑定的员工ID',
+  `reviewed_by` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '审核管理员ID',
+  `reviewed_at` DATETIME NULL DEFAULT NULL COMMENT '审核时间',
+  `reject_reason` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '驳回原因',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_employee_bind_requests_platform` (`platform`),
+  KEY `idx_employee_bind_requests_openid` (`openid`),
+  KEY `idx_employee_bind_requests_unionid` (`unionid`),
+  KEY `idx_employee_bind_requests_status` (`status`),
+  KEY `idx_employee_bind_requests_employee_id` (`employee_id`),
+  KEY `idx_employee_bind_requests_reviewed_by` (`reviewed_by`),
+  CONSTRAINT `fk_employee_bind_requests_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`),
+  CONSTRAINT `fk_employee_bind_requests_reviewed_by` FOREIGN KEY (`reviewed_by`) REFERENCES `admin_users` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='员工绑定申请表';
+
+CREATE TABLE `doctor_employee_relations` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `doctor_id` BIGINT UNSIGNED NOT NULL COMMENT '医生ID',
+  `employee_id` BIGINT UNSIGNED NOT NULL COMMENT '员工ID',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态：active/disabled',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_doctor_employee_relation` (`doctor_id`, `employee_id`),
+  KEY `idx_doctor_employee_relations_status` (`status`),
+  CONSTRAINT `fk_doctor_employee_relations_doctor_id` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`id`),
+  CONSTRAINT `fk_doctor_employee_relations_employee_id` FOREIGN KEY (`employee_id`) REFERENCES `employees` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='医生-员工关系表';
+
 CREATE TABLE `consult_sessions` (
   `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `session_no` VARCHAR(32) NOT NULL COMMENT '会话编号',
   `doctor_id` BIGINT UNSIGNED NOT NULL COMMENT '医生ID',
   `customer_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '顾客ID，首次加入后绑定',
+  `operator_employee_id` BIGINT UNSIGNED NULL DEFAULT NULL COMMENT '操作员工ID',
   `room_id` INT NOT NULL COMMENT 'TRTC房间号，必须处于int32合法范围',
   `share_token` VARCHAR(128) NULL DEFAULT NULL COMMENT '分享令牌',
   `share_url_path` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '小程序分享路径',
+  `source_type` VARCHAR(32) NOT NULL DEFAULT 'doctor_initiated' COMMENT '来源：doctor_initiated/employee_initiated/system_initiated',
+  `customer_name` VARCHAR(64) NOT NULL DEFAULT '' COMMENT '顾客姓名(操作员填写)',
+  `customer_mobile` VARCHAR(20) NOT NULL DEFAULT '' COMMENT '顾客手机号(操作员填写)',
+  `customer_remark` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '顾客备注',
   `status` VARCHAR(20) NOT NULL DEFAULT 'created' COMMENT '状态：created/shared/joined/in_consult/finished/expired/cancelled',
   `expired_at` DATETIME NOT NULL COMMENT '分享入口过期时间',
   `started_at` DATETIME NULL DEFAULT NULL COMMENT '开始面诊时间',
@@ -59,10 +159,13 @@ CREATE TABLE `consult_sessions` (
   UNIQUE KEY `uk_consult_sessions_share_token` (`share_token`),
   KEY `idx_consult_sessions_doctor_id` (`doctor_id`),
   KEY `idx_consult_sessions_customer_id` (`customer_id`),
+  KEY `idx_consult_sessions_operator_employee_id` (`operator_employee_id`),
+  KEY `idx_consult_sessions_source_type` (`source_type`),
   KEY `idx_consult_sessions_status` (`status`),
   KEY `idx_consult_sessions_expired_at` (`expired_at`),
   CONSTRAINT `fk_consult_sessions_doctor_id` FOREIGN KEY (`doctor_id`) REFERENCES `doctors` (`id`),
-  CONSTRAINT `fk_consult_sessions_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `users` (`id`)
+  CONSTRAINT `fk_consult_sessions_customer_id` FOREIGN KEY (`customer_id`) REFERENCES `users` (`id`),
+  CONSTRAINT `fk_consult_sessions_operator_employee_id` FOREIGN KEY (`operator_employee_id`) REFERENCES `employees` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='面诊会话表';
 
 CREATE TABLE `consult_records` (
@@ -109,3 +212,20 @@ CREATE TABLE `recording_tasks` (
   KEY `idx_recording_tasks_status` (`status`),
   CONSTRAINT `fk_recording_tasks_session_id` FOREIGN KEY (`session_id`) REFERENCES `consult_sessions` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='TRTC云端录制任务表';
+
+CREATE TABLE `session_logs` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `session_id` BIGINT UNSIGNED NOT NULL COMMENT '会话ID',
+  `actor_type` VARCHAR(20) NOT NULL COMMENT '操作者类型：admin/doctor/employee/customer/system',
+  `actor_id` BIGINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '操作者ID',
+  `action` VARCHAR(64) NOT NULL COMMENT '动作标识',
+  `payload` LONGTEXT NULL COMMENT '动作附加信息',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted_at` DATETIME NULL DEFAULT NULL COMMENT '软删除时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_session_logs_session_id` (`session_id`),
+  KEY `idx_session_logs_actor_type` (`actor_type`),
+  KEY `idx_session_logs_action` (`action`),
+  CONSTRAINT `fk_session_logs_session_id` FOREIGN KEY (`session_id`) REFERENCES `consult_sessions` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='会话操作日志表';

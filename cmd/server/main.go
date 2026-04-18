@@ -33,6 +33,10 @@ func main() {
 		log.Printf("已跳过 MySQL 自动迁移，使用现有数据库结构启动服务")
 	}
 
+	if err := database.EnsureDefaultAdmin(db, cfg.Admin); err != nil {
+		log.Fatalf("初始化默认管理员失败: %v", err)
+	}
+
 	rdb, err := database.NewRedis(cfg.Redis)
 	if err != nil {
 		log.Fatalf("连接 Redis 失败: %v", err)

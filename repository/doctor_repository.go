@@ -34,6 +34,32 @@ func (r *DoctorRepository) GetByEmployeeNo(employeeNo string) (*model.Doctor, er
 	return &doctor, nil
 }
 
+func (r *DoctorRepository) Create(doctor *model.Doctor) error {
+	return r.db.Create(doctor).Error
+}
+
 func (r *DoctorRepository) Update(doctor *model.Doctor) error {
 	return r.db.Save(doctor).Error
+}
+
+func (r *DoctorRepository) List(keyword, status string, offset, limit int) ([]model.Doctor, int64, error) {
+	query := r.db.Model(&model.Doctor{})
+	if keyword != "" {
+		likeKeyword := "%" + keyword + "%"
+		query = query.Where("name LIKE ? OR employee_no LIKE ? OR mobile LIKE ?", likeKeyword, likeKeyword, likeKeyword)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var doctors []model.Doctor
+	if err := query.Order("id DESC").Offset(offset).Limit(limit).Find(&doctors).Error; err != nil {
+		return nil, 0, err
+	}
+	return doctors, total, nil
 }

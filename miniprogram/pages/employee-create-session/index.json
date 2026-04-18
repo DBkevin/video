@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "员工发起面诊",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
+}

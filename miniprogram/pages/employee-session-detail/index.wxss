@@ -1,0 +1,92 @@
+.page-shell {
+  min-height: 100vh;
+  padding: 24rpx;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+}
+
+.card,
+.record-card {
+  background: #fff;
+  border-radius: 32rpx;
+  box-shadow: 0 18rpx 48rpx rgba(15, 23, 42, 0.08);
+}
+
+.card {
+  padding: 32rpx;
+  display: grid;
+  gap: 18rpx;
+}
+
+.badge {
+  width: fit-content;
+  padding: 8rpx 20rpx;
+  border-radius: 999rpx;
+  background: #e8f1ff;
+  color: #3557a8;
+  font-size: 24rpx;
+}
+
+.title {
+  font-size: 46rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.hint,
+.item,
+.label,
+.record-hint {
+  color: #475569;
+  font-size: 28rpx;
+}
+
+.error {
+  color: #c2410c;
+  font-size: 28rpx;
+}
+
+.share-box {
+  display: grid;
+  gap: 12rpx;
+}
+
+.payload {
+  padding: 20rpx 24rpx;
+  border-radius: 20rpx;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 26rpx;
+  word-break: break-all;
+}
+
+.actions {
+  display: grid;
+  gap: 16rpx;
+}
+
+.primary-btn,
+.secondary-btn {
+  border-radius: 999rpx;
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #0f766e 0%, #14b8a6 100%);
+  color: #fff;
+}
+
+.secondary-btn {
+  background: #dbe4f3;
+  color: #0f172a;
+}
+
+.record-card {
+  padding: 24rpx;
+  display: grid;
+  gap: 12rpx;
+}
+
+.record-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #0f172a;
+}

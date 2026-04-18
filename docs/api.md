@@ -1,10 +1,10 @@
 # API 清单
 
-## 基础信息
+## 基础说明
 
-- Base URL: `/api/v1`
+- Base URL：`/api/v1`
 - 认证方式：`Authorization: Bearer {token}`
-- 返回结构：
+- 通用返回结构：
 
 ```json
 {
@@ -14,146 +14,290 @@
 }
 ```
 
-## 登录
+## 角色说明
 
-### 用户登录
+- `admin`：Web 管理后台管理员
+- `employee`：已绑定员工的小程序身份
+- `employee_pending`：已扫码登录但绑定申请待审核
+- `employee_guest`：已扫码登录但尚未绑定员工
+- `doctor`：医生
+- `user`：顾客
 
-- `POST /auth/user/login`
+## 一、管理员后台接口
+
+### 1. 管理员登录
+
+- `POST /admin/auth/login`
+
+请求：
 
 ```json
 {
+  "username": "admin",
+  "password": "admin123456"
+}
+```
+
+返回：
+
+- `access_token`
+- `expires_at`
+- `role=admin`
+- `admin`
+
+### 2. 员工管理
+
+- `GET /admin/employees?page=1&page_size=20&keyword=&status=`
+- `POST /admin/employees`
+- `PUT /admin/employees/:id`
+
+新增/编辑请求：
+
+```json
+{
+  "real_name": "张三",
   "mobile": "13800000001",
-  "password": "123456"
+  "employee_code": "EMP001",
+  "status": "active",
+  "remark": "负责皮肤科顾客联络"
 }
 ```
 
-### 医生登录
+员工列表返回中包含：
 
-- `POST /auth/doctor/login`
+- `wechat_account_count`
+
+### 3. 员工绑定申请审核
+
+- `GET /admin/employee-bind-requests?page=1&page_size=20&status=pending`
+- `POST /admin/employee-bind-requests/:id/approve`
+- `POST /admin/employee-bind-requests/:id/reject`
+
+审核通过请求：
+
+方式 A：绑定到已有员工
 
 ```json
 {
-  "employee_no": "DOC1001",
-  "password": "123456"
+  "employee_id": 12
 }
 ```
 
-### 微信小程序顾客登录
+方式 B：审核时创建新员工并绑定
 
-- `POST /auth/wx-login`
+```json
+{
+  "real_name": "李四",
+  "mobile": "13900000001",
+  "employee_code": "EMP002",
+  "remark": "审核时创建的新员工"
+}
+```
 
-请求示例：
+驳回请求：
+
+```json
+{
+  "reason": "信息填写不完整，请补充真实姓名"
+}
+```
+
+### 4. 医生管理
+
+- `GET /admin/doctors?page=1&page_size=20&keyword=&status=`
+- `POST /admin/doctors`
+- `PUT /admin/doctors/:id`
+
+新增医生请求：
+
+```json
+{
+  "name": "王医生",
+  "mobile": "13700000001",
+  "title": "主治医师",
+  "department": "皮肤科",
+  "introduction": "擅长皮肤常见病视频面诊",
+  "employee_no": "DOC1001",
+  "password": "123456",
+  "status": "enabled"
+}
+```
+
+### 5. 医生-员工关系配置
+
+- `GET /admin/doctor-employee-relations?doctor_id=&employee_id=&status=`
+- `POST /admin/doctor-employee-relations`
+- `DELETE /admin/doctor-employee-relations/:id`
+
+创建关系请求：
+
+```json
+{
+  "doctor_id": 1,
+  "employee_id": 2,
+  "status": "active"
+}
+```
+
+### 6. 会话管理
+
+- `GET /admin/consult-sessions?page=1&page_size=20&status=&source_type=&doctor_id=&employee_id=`
+- `GET /admin/consult-sessions/:id`
+
+会话详情返回重点字段：
+
+- `session`
+- `doctor`
+- `customer`
+- `operator_employee`
+- `recording_task`
+- `logs`
+
+## 二、员工端接口
+
+### 1. 员工微信登录
+
+- `POST /employee/auth/wx-login`
+
+请求：
 
 ```json
 {
   "code": "wx.login 返回的 code",
-  "nickname": "张三",
+  "nickname": "员工昵称",
   "avatar_url": "https://example.com/avatar.png"
 }
 ```
 
-返回字段包含：
+返回字段：
 
 - `access_token`
 - `expires_at`
-- `role=user`
-- `user`
+- `role`
+- `binding_status`
+- `employee`
+- `bind_request`
+
+`binding_status` 说明：
+
+- `bound`：已绑定员工，可继续发起会话
+- `pending`：已提交申请，待后台审核
+- `unbound`：尚未提交绑定申请
+- `rejected`：最近一次申请被驳回
+
+### 2. 获取员工绑定状态
+
+- `GET /employee/bind-status`
 
 说明：
 
-- 顾客打开医生分享的小程序入口后，可直接走 `wx.login + /auth/wx-login`
-- 如果 `openid` 对应顾客不存在，后端会自动创建基础用户
-- 如果顾客已存在，后端会自动登录并返回业务 token
-- 当前已预留微信 `code2session` 调用封装；未配置微信密钥时，会走本地 mock 占位流程，仅用于联调
+- 需要先调用 `/employee/auth/wx-login`
+- 允许 `employee / employee_pending / employee_guest` 三种登录态访问
 
-## RTC
+### 3. 提交绑定申请
 
-### 获取通用 UserSig
+- `POST /employee/bind-request`
 
-- `POST /rtc/usersig`
+请求：
+
+```json
+{
+  "real_name": "张三",
+  "mobile": "13800000001",
+  "employee_code": "EMP001"
+}
+```
 
 说明：
 
-- 该接口仍可用于登录态用户单独获取签名。
-- 在会话化流程里，顾客 `join` 和医生 `start` 已直接返回当前会话的 RTC 入房信息。
+- 所有员工扫描的是同一个固定二维码入口
+- 二维码不携带员工 ID
+- 后端按当前微信身份 `openid / unionid` 记录申请
 
-## 面诊会话
+### 4. 获取员工可选医生列表
 
-### 1. 医生创建会话
+- `GET /employee/doctors`
 
-- `POST /consult-sessions`
+返回：
 
-请求示例：
+- `items[].relation_id`
+- `items[].id`
+- `items[].name`
+- `items[].title`
+- `items[].department`
 
-```json
-{
-  "expire_minutes": 120
-}
-```
+### 5. 员工发起会话
 
-### 2. 医生查看会话
+- `POST /employee/consult-sessions`
 
-- `GET /consult-sessions/:id`
-
-用途：
-
-- 医生创建成功页轮询会话状态
-- 判断顾客是否已加入
-- 判断是否可以开始面诊
-
-返回字段新增：
-
-- `recording_task`
-
-`recording_task` 结构示例：
+请求：
 
 ```json
 {
-  "status": "finished",
-  "task_id": "xxx",
-  "file_id": "5285890813738447101",
-  "video_url": "https://xxx.vod2.myqcloud.com/xxx.mp4",
-  "started_at": "2026-04-16T10:00:00+08:00",
-  "ended_at": "2026-04-16T10:12:00+08:00"
+  "doctor_id": 1,
+  "expire_minutes": 120,
+  "customer_name": "顾客张三",
+  "customer_mobile": "13800000002",
+  "customer_remark": "由员工提前沟通，想咨询皮肤过敏"
 }
 ```
 
-医生端展示建议：
+说明：
 
-- `recording`：显示“录制中”
-- `stopping`：显示“处理中”
-- `finished`：如果 `video_url` 已回传，可展示“查看回放 / 复制回放链接”
-- `failed`：展示录制失败提示，并提醒医生稍后查看日志或重试
+- 会自动创建 `consult_sessions`
+- 会自动生成 `share_token` 与 `share_url_path`
+- 会把 `operator_employee_id` 写入会话
+- 会把 `source_type` 写成 `employee_initiated`
 
-### 3. 医生生成分享入口
+返回字段：
 
-- `POST /consult-sessions/:id/share`
-
-请求示例：
-
-```json
-{
-  "expire_minutes": 120
-}
-```
-
-返回字段包含：
-
+- `session`
 - `share_token`
 - `share_url_path`
+
+### 6. 员工历史会话列表
+
+- `GET /employee/consult-sessions?page=1&page_size=20&status=&source_type=&doctor_id=`
+
+### 7. 员工会话详情
+
+- `GET /employee/consult-sessions/:id`
+
+返回字段：
+
 - `session`
+- `doctor`
+- `customer`
+- `operator_employee`
+- `recording_task`
+- `logs`
+
+## 三、顾客端接口
+
+### 1. 顾客微信登录
+
+- `POST /auth/wx-login`
+
+请求：
+
+```json
+{
+  "code": "wx.login 返回的 code",
+  "nickname": "顾客昵称",
+  "avatar_url": "https://example.com/avatar.png"
+}
+```
 
 说明：
 
-- 分享参数中不会直接包含 `userSig`
-- 重复分享会生成新的 `share_token`，旧 token 自动失效
-- 如果分享链接过期，顾客打开入口会收到明确提示“分享入口已过期，请联系医生重新分享”
+- 若 `openid` 对应顾客不存在，后端会自动创建基础用户
+- 若已存在，则自动登录返回业务 token
 
-### 4. 顾客通过 token 获取入口信息
+### 2. 获取顾客入口信息
 
 - `GET /consult-entry?token=xxx`
 
-返回字段包含：
+返回：
 
 - `session_id`
 - `session_no`
@@ -162,89 +306,109 @@
 - `can_join`
 - `doctor`
 
-说明：
-
-- 该接口不返回 `userSig`
-- token 无效、过期、会话结束时会返回明确业务提示
-
-### 5. 顾客加入会话
+### 3. 顾客加入会话
 
 - `POST /consult-sessions/:id/join`
 
-请求示例：
+请求：
 
 ```json
 {
-  "share_token": "医生分享出来的 token"
+  "share_token": "医生或员工分享出来的 token"
 }
 ```
 
-返回字段包含：
+返回：
 
 - `session`
-- `rtc.room_id`
-- `rtc.rtc_user_id`
-- `rtc.user_sig`
-- `rtc.sdk_app_id`
-- `rtc.user_sig_expire_at`
+- `rtc`
 - `current_role=customer`
 - `doctor`
 
-说明：
-
-- 顾客首次加入时会绑定 `customer_id`
-- 如果同一顾客重复进入，后端会直接返回当前会话和新的临时 RTC 凭证
-- 小程序可在 join 成功后初始化 TUICallKit，并进入候诊/通话页
-
-### 6. 医生开始面诊
-
-- `POST /consult-sessions/:id/start`
-
-返回字段包含：
-
-- `session`
-- `rtc.room_id`
-- `rtc.rtc_user_id`
-- `rtc.user_sig`
-- `rtc.sdk_app_id`
-- `current_role=doctor`
-- `customer`
-
-说明：
-
-- 只有顾客已加入的 `joined` 状态，才能进入 `start`
-- `start` 后状态切为 `in_consult`
-- 小程序医生端可在 start 成功后初始化 TUICallKit，并向顾客发起视频通话
-- 接口成功后会自动通过 TRTC RESTful API 创建云端录制任务
-- 默认采用合流录制（mixed recording）并写入 VOD
-- 如果录制启动失败，接口仍返回业务成功，但 `message` 会带上明确的录制失败提示，前端需要显式提醒医生
-
-### 7. 医生取消会话
-
-- `POST /consult-sessions/:id/cancel`
-
-说明：
-
-- 仅医生可调用
-- 会把当前会话状态置为 `cancelled`
-- 已取消会话再次调用会幂等返回当前结果
-
-### 8. 顾客离开会话
+### 4. 顾客离开会话
 
 - `POST /consult-sessions/:id/leave`
 
 说明：
 
-- 仅顾客可调用
-- 顾客离开候诊页时，会把状态从 `joined` 回退到 `shared`
-- 顾客在通话中离开页面时，会把状态从 `in_consult` 回退到 `joined`
-- 该接口用于处理小程序页面关闭、异常返回、用户主动离开等情况
+- 候诊时离开会从 `joined` 回退到 `shared`
+- 通话中离开会从 `in_consult` 回退到 `joined`
 
-### 9. 医生结束面诊
+## 四、医生端接口
+
+### 1. 医生账号密码登录
+
+- `POST /auth/doctor/login`
+
+请求：
+
+```json
+{
+  "employee_no": "DOC1001",
+  "password": "123456"
+}
+```
+
+### 2. 医生自行创建会话
+
+- `POST /consult-sessions`
+
+请求：
+
+```json
+{
+  "expire_minutes": 120
+}
+```
+
+说明：
+
+- 当前接口保留兼容老流程
+- 创建后 `source_type=doctor_initiated`
+
+### 3. 医生查看会话详情
+
+- `GET /consult-sessions/:id`
+
+返回新增字段：
+
+- `operator_employee`
+- `recording_task`
+
+### 4. 医生生成分享入口
+
+- `POST /consult-sessions/:id/share`
+
+请求：
+
+```json
+{
+  "expire_minutes": 120
+}
+```
+
+### 5. 医生开始面诊
+
+- `POST /consult-sessions/:id/start`
+
+说明：
+
+- 顾客必须已 join
+- 成功后切到 `in_consult`
+- 自动触发 TRTC 云端录制
+
+返回：
+
+- `session`
+- `rtc`
+- `current_role=doctor`
+- `customer`
+
+### 6. 医生结束面诊
 
 - `POST /consult-sessions/:id/finish`
 
-请求示例：
+请求：
 
 ```json
 {
@@ -257,84 +421,87 @@
 
 说明：
 
-- 会写入 `consult_records`
-- 已结束会话再次调用会幂等返回当前结果，不会重复创建记录
-- 接口成功后会自动通过 TRTC RESTful API 停止录制
-- finish 保持幂等，不会重复创建录制任务
-- 如果录制停止失败，接口仍返回业务成功，但 `message` 会带上明确的录制失败提示，前端需要显式提醒医生
+- 会保存 `consult_records`
+- 会自动停止录制
+- 幂等返回，不会重复创建记录
 
-## TRTC 录制回调
+### 7. 医生取消会话
 
-### 10. 接收云端录制回调
+- `POST /consult-sessions/:id/cancel`
+
+## 五、RTC 与录制接口
+
+### 1. 获取通用 UserSig
+
+- `POST /rtc/usersig`
+
+说明：
+
+- 仍可用于登录态用户单独获取签名
+- 但当前会话主链路更推荐直接使用 join/start 返回的 `rtc`
+
+### 2. TRTC 录制回调
 
 - `POST /trtc/recording/callback`
 
 说明：
 
-- 该接口供腾讯云 TRTC 录制回调调用，不需要业务登录态
-- 回调接口始终返回 HTTP 200
-- 当前实现会在 `HandleRecordingCallback` 中读取请求头 `Sign` 并进行校验
-- 校验规则：
+- 不需要业务登录态
+- 回调会始终返回 HTTP 200
+- 会校验请求头 `Sign`
+
+签名规则：
 
 ```text
 Sign = Base64(HMAC-SHA256(rawBody, TRTC_RECORDING_CALLBACK_KEY))
 ```
 
-- `TRTC_RECORDING_CALLBACK_KEY` 需要与腾讯云 TRTC 控制台录制回调里配置的“自定义 key”保持一致
-- 如果签名校验失败、缺少 `Sign`，或服务端未配置 `TRTC_RECORDING_CALLBACK_KEY`：
-  - 仍返回 HTTP 200
-  - `data.handled=false`
-  - 服务端记录拒绝日志
-- 收到上传完成事件后，后端会把 `file_id / video_url / file_name` 写入 `recording_tasks`
-- `raw_callback` 会原样保存在数据库，便于后续排查回调与录制问题
+校验失败时：
 
-成功返回示例：
+- HTTP 仍返回 200
+- `data.handled=false`
+- 不更新 `recording_tasks`
+- 服务端记录拒绝日志
 
-```json
-{
-  "code": 200,
-  "message": "录制回调处理成功",
-  "data": {
-    "handled": true,
-    "task_id": "1400000000-task-id"
-  }
-}
+## 六、固定二维码绑定建议入口
+
+固定二维码统一建议指向：
+
+```text
+/pages/employee-bind/index?scene=bind_employee
 ```
 
-签名校验失败返回示例：
+说明：
 
-```json
-{
-  "code": 200,
-  "message": "录制回调签名校验失败，已忽略",
-  "data": {
-    "handled": false,
-    "task_id": ""
-  }
-}
-```
+- 所有员工扫描同一个二维码
+- 不在二维码里写死员工 ID
+- 后端通过当前微信身份识别是谁提交了申请
 
-## 小程序最小接入链路
+## 七、前端链路摘要
+
+### 员工链路
+
+1. 员工扫码固定二维码进入 `employee-bind`
+2. 小程序执行 `wx.login`
+3. 调用 `POST /employee/auth/wx-login`
+4. 若未绑定则提交 `POST /employee/bind-request`
+5. 后台审核通过后，员工进入 `employee-create-session`
+6. 调用 `GET /employee/doctors`
+7. 调用 `POST /employee/consult-sessions`
+8. 员工在 `employee-session-detail` 转发顾客入口
 
 ### 顾客链路
 
-1. 顾客打开分享路径 `/pages/customer-entry/index?token=xxx`
-2. 页面执行 `wx.login`
-3. 调用 `POST /auth/wx-login`
-4. 调用 `GET /consult-entry?token=xxx`
-5. 调用 `POST /consult-sessions/:id/join`
-6. 跳转到 `/pages/consult-room/index`
+1. 顾客打开分享卡片进入 `customer-entry`
+2. 调用 `POST /auth/wx-login`
+3. 调用 `GET /consult-entry?token=xxx`
+4. 调用 `POST /consult-sessions/:id/join`
+5. 进入候诊/通话页
 
 ### 医生链路
 
-1. 医生打开 `/pages/doctor-login/index`
-2. 调用 `POST /auth/doctor/login`
-3. 登录成功后把 `doctor_access_token` 写入 storage，并跳转 `/pages/doctor-create-session/index`
-4. 创建会话时调用 `POST /consult-sessions`
-5. 创建成功后跳转 `/pages/doctor-session-detail/index?id={sessionId}`
-6. 页面轮询 `GET /consult-sessions/:id` 查看顾客是否已加入
-7. 点击“生成分享入口”调用 `POST /consult-sessions/:id/share`
-8. 顾客加入后点击“进入视频面诊”调用 `POST /consult-sessions/:id/start`
-9. 跳转到 `/pages/consult-room/index`
-
-更完整的小程序页面说明见 [docs/miniprogram.md](miniprogram.md)。
+1. 医生登录
+2. 查看 `doctor-session-detail`
+3. 顾客加入后调用 `POST /consult-sessions/:id/start`
+4. 进入通话页
+5. 结束后调用 `POST /consult-sessions/:id/finish`

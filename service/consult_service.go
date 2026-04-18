@@ -53,6 +53,14 @@ type CustomerBasicInfo struct {
 	Mobile    string `json:"mobile"`
 }
 
+type EmployeeBasicInfo struct {
+	ID           uint64 `json:"id"`
+	RealName     string `json:"real_name"`
+	Mobile       string `json:"mobile"`
+	EmployeeCode string `json:"employee_code"`
+	Status       string `json:"status"`
+}
+
 type SessionRTCInfo struct {
 	RoomID          int32  `json:"room_id"`
 	RTCUserID       string `json:"rtc_user_id"`
@@ -84,11 +92,12 @@ type GetConsultEntryResult struct {
 }
 
 type GetConsultSessionResult struct {
-	Session       *model.ConsultSession `json:"session"`
-	Customer      *CustomerBasicInfo    `json:"customer,omitempty"`
-	CanStart      bool                  `json:"can_start"`
-	RecordingTask *RecordingTaskInfo    `json:"recording_task,omitempty"`
-	Message       string                `json:"-"`
+	Session          *model.ConsultSession `json:"session"`
+	Customer         *CustomerBasicInfo    `json:"customer,omitempty"`
+	OperatorEmployee *EmployeeBasicInfo    `json:"operator_employee,omitempty"`
+	CanStart         bool                  `json:"can_start"`
+	RecordingTask    *RecordingTaskInfo    `json:"recording_task,omitempty"`
+	Message          string                `json:"-"`
 }
 
 type JoinConsultSessionResult struct {
@@ -129,8 +138,10 @@ type ConsultService struct {
 	cfg              config.ConsultConfig
 	userRepo         *repository.UserRepository
 	doctorRepo       *repository.DoctorRepository
+	employeeRepo     *repository.EmployeeRepository
 	sessionRepo      *repository.ConsultSessionRepository
 	recordRepo       *repository.ConsultRecordRepository
+	sessionLogRepo   *repository.SessionLogRepository
 	rtcService       *RTCService
 	recordingService *TRTCRecordingService
 }
@@ -140,8 +151,10 @@ func NewConsultService(
 	cfg config.ConsultConfig,
 	userRepo *repository.UserRepository,
 	doctorRepo *repository.DoctorRepository,
+	employeeRepo *repository.EmployeeRepository,
 	sessionRepo *repository.ConsultSessionRepository,
 	recordRepo *repository.ConsultRecordRepository,
+	sessionLogRepo *repository.SessionLogRepository,
 	rtcService *RTCService,
 	recordingService *TRTCRecordingService,
 ) *ConsultService {
@@ -150,8 +163,10 @@ func NewConsultService(
 		cfg:              cfg,
 		userRepo:         userRepo,
 		doctorRepo:       doctorRepo,
+		employeeRepo:     employeeRepo,
 		sessionRepo:      sessionRepo,
 		recordRepo:       recordRepo,
+		sessionLogRepo:   sessionLogRepo,
 		rtcService:       rtcService,
 		recordingService: recordingService,
 	}
@@ -178,16 +193,20 @@ func (s *ConsultService) CreateConsultSession(ctx context.Context, doctorID uint
 	}
 
 	session := &model.ConsultSession{
-		SessionNo: generateSessionNo(),
-		DoctorID:  doctorID,
-		RoomID:    roomID,
-		Status:    model.ConsultSessionStatusCreated,
-		ExpiredAt: time.Now().Add(time.Duration(expireMinutes) * time.Minute),
+		SessionNo:  generateSessionNo(),
+		DoctorID:   doctorID,
+		RoomID:     roomID,
+		SourceType: model.ConsultSessionSourceDoctorInitiated,
+		Status:     model.ConsultSessionStatusCreated,
+		ExpiredAt:  time.Now().Add(time.Duration(expireMinutes) * time.Minute),
 	}
 
 	if err := s.sessionRepo.WithDB(s.db.WithContext(ctx)).Create(session); err != nil {
 		return nil, HandleDBError(err, "会话创建失败，请稍后重试")
 	}
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorDoctor, doctorID, "doctor_create_session", map[string]any{
+		"source_type": session.SourceType,
+	})
 
 	detail, err := s.sessionRepo.WithDB(s.db.WithContext(ctx)).GetByID(session.ID)
 	if err != nil {
@@ -254,6 +273,9 @@ func (s *ConsultService) ShareConsultSession(ctx context.Context, sessionID, doc
 	if err == nil {
 		session = detail
 	}
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorDoctor, doctorID, "share_session", map[string]any{
+		"share_url_path": session.ShareURLPath,
+	})
 
 	return &ShareConsultSessionResult{
 		Session:      session,
@@ -324,11 +346,12 @@ func (s *ConsultService) GetConsultSession(ctx context.Context, sessionID, docto
 	}
 
 	return &GetConsultSessionResult{
-		Session:       session,
-		Customer:      buildCustomerBasicInfo(session.CustomerID, &session.Customer),
-		CanStart:      session.Status == model.ConsultSessionStatusJoined,
-		RecordingTask: recordInfo,
-		Message:       "会话信息获取成功",
+		Session:          session,
+		Customer:         buildCustomerBasicInfo(session.CustomerID, &session.Customer),
+		OperatorEmployee: buildEmployeeBasicInfo(session.OperatorEmployeeID, &session.OperatorEmployee),
+		CanStart:         session.Status == model.ConsultSessionStatusJoined,
+		RecordingTask:    recordInfo,
+		Message:          "会话信息获取成功",
 	}, nil
 }
 
@@ -416,6 +439,9 @@ func (s *ConsultService) JoinConsultSession(ctx context.Context, sessionID, cust
 	if err == nil {
 		session = detail
 	}
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorCustomer, customerID, "customer_join_session", map[string]any{
+		"status": session.Status,
+	})
 
 	// 顾客侧不从分享链接直接拿 userSig，而是在 join 成功后由服务端临时签发。
 	rtcInfo, err := s.buildRTCInfo(ctx, session.RoomID, buildCustomerSessionRTCUserID(session.ID, customerID))
@@ -489,6 +515,9 @@ func (s *ConsultService) StartConsultSession(ctx context.Context, sessionID, doc
 	if err == nil {
 		session = detail
 	}
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorDoctor, doctorID, "doctor_start_session", map[string]any{
+		"status": session.Status,
+	})
 
 	// 医生开始面诊后，同样由服务端下发当前会话专属的 RTC 入房参数。
 	rtcInfo, err := s.buildRTCInfo(ctx, session.RoomID, buildDoctorSessionRTCUserID(session.ID, doctorID))
@@ -592,6 +621,14 @@ func (s *ConsultService) FinishConsultSession(ctx context.Context, sessionID, do
 	if err == nil {
 		session = detail
 	}
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorDoctor, doctorID, "doctor_finish_session", map[string]any{
+		"record_id": func() uint64 {
+			if record == nil {
+				return 0
+			}
+			return record.ID
+		}(),
+	})
 
 	return &FinishConsultSessionResult{
 		Session: session,
@@ -652,6 +689,9 @@ func (s *ConsultService) CancelConsultSession(ctx context.Context, sessionID, do
 	if err == nil {
 		session = detail
 	}
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorDoctor, doctorID, "doctor_cancel_session", map[string]any{
+		"status": session.Status,
+	})
 
 	return &CancelConsultSessionResult{
 		Session: session,
@@ -721,6 +761,10 @@ func (s *ConsultService) LeaveConsultSession(ctx context.Context, sessionID, cus
 	if err == nil {
 		session = detail
 	}
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorCustomer, customerID, "customer_leave_session", map[string]any{
+		"status":     session.Status,
+		"can_rejoin": canRejoin,
+	})
 
 	return &LeaveConsultSessionResult{
 		Session:   session,
@@ -866,6 +910,20 @@ func buildCustomerBasicInfo(customerID *uint64, user *model.User) *CustomerBasic
 		Nickname:  user.Nickname,
 		AvatarURL: user.AvatarURL,
 		Mobile:    user.Mobile,
+	}
+}
+
+func buildEmployeeBasicInfo(employeeID *uint64, employee *model.Employee) *EmployeeBasicInfo {
+	if employeeID == nil || employee == nil || employee.ID == 0 {
+		return nil
+	}
+
+	return &EmployeeBasicInfo{
+		ID:           employee.ID,
+		RealName:     employee.RealName,
+		Mobile:       employee.Mobile,
+		EmployeeCode: employee.EmployeeCode,
+		Status:       employee.Status,
 	}
 }
 

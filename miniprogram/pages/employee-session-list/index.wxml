@@ -1,0 +1,30 @@
+<view class="page-shell">
+  <view class="card">
+    <view class="header-row">
+      <view>
+        <view class="badge">员工历史页</view>
+        <view class="title">我发起的面诊会话</view>
+      </view>
+      <button class="small-btn" bindtap="handleCreateNew">新建会话</button>
+    </view>
+
+    <picker mode="selector" range="{{statusOptions}}" bindchange="handleFilterChange">
+      <view class="picker">状态筛选：{{filterStatus || '全部'}}</view>
+    </picker>
+
+    <view wx:if="{{loading}}" class="hint">正在加载会话列表...</view>
+    <view wx:if="{{errorMessage}}" class="error">{{errorMessage}}</view>
+
+    <block wx:for="{{items}}" wx:key="index">
+      <view class="session-item" bindtap="handleOpenDetail" data-id="{{item.session.id}}">
+        <view class="session-title">{{item.doctor.name}} · {{item.session.customer_name || item.customer.nickname || '未填写顾客'}}</view>
+        <view class="session-meta">会话编号：{{item.session.session_no}}</view>
+        <view class="session-meta">状态：{{item.session.status}} · 录制：{{item.recording_task.status || '未开始'}}</view>
+      </view>
+    </block>
+
+    <view wx:if="{{!loading && !items.length}}" class="hint">当前还没有历史会话。</view>
+  </view>
+
+  <debug-panel page-name="employee-session-list"></debug-panel>
+</view>

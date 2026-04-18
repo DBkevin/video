@@ -29,7 +29,7 @@ func (r *ConsultSessionRepository) Update(session *model.ConsultSession) error {
 
 func (r *ConsultSessionRepository) GetByID(id uint64) (*model.ConsultSession, error) {
 	var session model.ConsultSession
-	if err := r.db.Preload("Doctor").Preload("Customer").First(&session, id).Error; err != nil {
+	if err := r.db.Preload("Doctor").Preload("Customer").Preload("OperatorEmployee").First(&session, id).Error; err != nil {
 		return nil, err
 	}
 	return &session, nil
@@ -37,7 +37,7 @@ func (r *ConsultSessionRepository) GetByID(id uint64) (*model.ConsultSession, er
 
 func (r *ConsultSessionRepository) GetByIDForUpdate(id uint64) (*model.ConsultSession, error) {
 	var session model.ConsultSession
-	if err := r.db.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Doctor").Preload("Customer").First(&session, id).Error; err != nil {
+	if err := r.db.Clauses(clause.Locking{Strength: "UPDATE"}).Preload("Doctor").Preload("Customer").Preload("OperatorEmployee").First(&session, id).Error; err != nil {
 		return nil, err
 	}
 	return &session, nil
@@ -45,7 +45,7 @@ func (r *ConsultSessionRepository) GetByIDForUpdate(id uint64) (*model.ConsultSe
 
 func (r *ConsultSessionRepository) GetByShareToken(token string) (*model.ConsultSession, error) {
 	var session model.ConsultSession
-	if err := r.db.Preload("Doctor").Preload("Customer").Where("share_token = ?", token).First(&session).Error; err != nil {
+	if err := r.db.Preload("Doctor").Preload("Customer").Preload("OperatorEmployee").Where("share_token = ?", token).First(&session).Error; err != nil {
 		return nil, err
 	}
 	return &session, nil
@@ -57,4 +57,28 @@ func (r *ConsultSessionRepository) ExistsByRoomID(roomID int32) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
+}
+
+func (r *ConsultSessionRepository) List(query func(*gorm.DB) *gorm.DB, offset, limit int) ([]model.ConsultSession, int64, error) {
+	db := r.db.Model(&model.ConsultSession{})
+	if query != nil {
+		db = query(db)
+	}
+
+	var total int64
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var sessions []model.ConsultSession
+	if err := db.Preload("Doctor").
+		Preload("Customer").
+		Preload("OperatorEmployee").
+		Order("id DESC").
+		Offset(offset).
+		Limit(limit).
+		Find(&sessions).Error; err != nil {
+		return nil, 0, err
+	}
+	return sessions, total, nil
 }

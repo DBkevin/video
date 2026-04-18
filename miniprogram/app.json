@@ -1,5 +1,9 @@
 {
   "pages": [
+    "pages/employee-bind/index",
+    "pages/employee-create-session/index",
+    "pages/employee-session-list/index",
+    "pages/employee-session-detail/index",
     "pages/doctor-login/index",
     "pages/doctor-create-session/index",
     "pages/customer-entry/index",

@@ -17,8 +17,14 @@ func AutoMigrate(db *gorm.DB) error {
 		AutoMigrate(
 			&model.User{},
 			&model.Doctor{},
+			&model.AdminUser{},
+			&model.Employee{},
+			&model.EmployeeWechatAccount{},
+			&model.EmployeeBindRequest{},
+			&model.DoctorEmployeeRelation{},
 			&model.ConsultSession{},
 			&model.ConsultRecord{},
 			&model.RecordingTask{},
+			&model.SessionLog{},
 		)
 }

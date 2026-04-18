@@ -12,6 +12,7 @@ type Config struct {
 	MySQL         MySQLConfig
 	Redis         RedisConfig
 	JWT           JWTConfig
+	Admin         AdminConfig
 	TRTC          TRTCConfig
 	TRTCRecording TRTCRecordingConfig
 	Consult       ConsultConfig
@@ -38,6 +39,13 @@ type JWTConfig struct {
 	Secret      string
 	Issuer      string
 	ExpireHours int
+}
+
+type AdminConfig struct {
+	DefaultUsername string
+	DefaultPassword string
+	DefaultName     string
+	AutoSeed        bool
 }
 
 type TRTCConfig struct {
@@ -96,6 +104,12 @@ func Load() (*Config, error) {
 			Secret:      getString("JWT_SECRET", "please-change-me"),
 			Issuer:      getString("JWT_ISSUER", "video-consult-mvp"),
 			ExpireHours: getInt("JWT_EXPIRE_HOURS", 72),
+		},
+		Admin: AdminConfig{
+			DefaultUsername: getString("ADMIN_DEFAULT_USERNAME", "admin"),
+			DefaultPassword: getString("ADMIN_DEFAULT_PASSWORD", "admin123456"),
+			DefaultName:     getString("ADMIN_DEFAULT_NAME", "系统管理员"),
+			AutoSeed:        getBool("ADMIN_AUTO_SEED", true),
 		},
 		TRTC: TRTCConfig{
 			SDKAppID:        uint32(getInt("TRTC_SDK_APP_ID", 0)),

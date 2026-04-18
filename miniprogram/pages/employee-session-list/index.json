@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "员工历史会话",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
+}

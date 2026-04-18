@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "员工绑定",
+  "usingComponents": {
+    "debug-panel": "../../components/debug-panel/index"
+  }
+}
