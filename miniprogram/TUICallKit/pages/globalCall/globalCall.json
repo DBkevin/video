@@ -1,3 +1,7 @@
 {
-  "navigationBarTitleText": "来电页"
+  "usingComponents": {
+    "TUICallKit": "../../TUICallKit/TUICallKit"
+  },
+  "navigationStyle": "custom",
+  "disableScroll": true
 }

@@ -1,0 +1,78 @@
+{
+  "setting": {
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "uglifyFileName": false,
+    "enhance": true,
+    "packNpmRelationList": [],
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "useCompilerPlugins": false,
+    "minifyWXML": true
+  },
+  "compileType": "miniprogram",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [
+      {
+        "type": "folder",
+        "value": "node_modules"
+      },
+      {
+        "type": "folder",
+        "value": "TUICallKit/debug"
+      },
+      {
+        "type": "folder",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/plugins"
+      },
+      {
+        "type": "suffix",
+        "value": ".map"
+      },
+      {
+        "type": "suffix",
+        "value": ".d.ts"
+      },
+      {
+        "type": "file",
+        "value": "package-lock.json"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/README.md"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/package.json"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/basic.es.js"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/standard.js"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/standard.es.js"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/professional.js"
+      },
+      {
+        "type": "file",
+        "value": "miniprogram_npm/@tencentcloud/lite-chat/professional.es.js"
+      }
+    ],
+    "include": []
+  },
+  "appid": "wxb64167ce4941f1b6",
+  "editorSetting": {}
+}
