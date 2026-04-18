@@ -111,6 +111,14 @@ function startConsultSession(sessionId, accessToken) {
   })
 }
 
+function confirmConsultConnected(sessionId, accessToken) {
+  return request({
+    url: `/consult-sessions/${sessionId}/connected`,
+    method: 'POST',
+    token: accessToken
+  })
+}
+
 function finishConsultSession(sessionId, accessToken, payload = {}) {
   return request({
     url: `/consult-sessions/${sessionId}/finish`,
@@ -177,6 +185,7 @@ module.exports = {
   getConsultSession,
   shareConsultSession,
   startConsultSession,
+  confirmConsultConnected,
   finishConsultSession,
   cancelConsultSession,
   leaveConsultSession,

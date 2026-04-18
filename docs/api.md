@@ -395,7 +395,8 @@
 
 - 顾客必须已 join
 - 成功后切到 `in_consult`
-- 自动触发 TRTC 云端录制
+- 此时只切换面诊状态并返回 RTC 入房参数
+- 真正进入有效通话后，再由客户端调用“确认通话建立”接口触发录制
 
 返回：
 
@@ -404,7 +405,23 @@
 - `current_role=doctor`
 - `customer`
 
-### 6. 医生结束面诊
+### 6. 医生确认通话建立
+
+- `POST /consult-sessions/:id/connected`
+
+说明：
+
+- 仅医生可调用
+- 用于客户端在 TUICallKit 真正进入有效通话状态后通知服务端
+- 服务端收到确认后才启动 TRTC 云端录制
+- 幂等处理，若录制任务已存在则直接复用
+
+返回：
+
+- `session`
+- `recording_task`
+
+### 7. 医生结束面诊
 
 - `POST /consult-sessions/:id/finish`
 
@@ -425,7 +442,7 @@
 - 会自动停止录制
 - 幂等返回，不会重复创建记录
 
-### 7. 医生取消会话
+### 8. 医生取消会话
 
 - `POST /consult-sessions/:id/cancel`
 
@@ -503,5 +520,6 @@ Sign = Base64(HMAC-SHA256(rawBody, TRTC_RECORDING_CALLBACK_KEY))
 1. 医生登录
 2. 查看 `doctor-session-detail`
 3. 顾客加入后调用 `POST /consult-sessions/:id/start`
-4. 进入通话页
-5. 结束后调用 `POST /consult-sessions/:id/finish`
+4. TUICallKit 进入有效通话状态后调用 `POST /consult-sessions/:id/connected`
+5. 进入通话页
+6. 结束后调用 `POST /consult-sessions/:id/finish`

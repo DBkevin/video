@@ -1,6 +1,8 @@
 const GLOBAL_CALL_PAGE_PATH = 'TUICallKit/pages/globalCall/globalCall'
 const VIDEO_CALL_TYPE = 2
 const CALL_STATUS_WATCH_FLAG = '__videoConsultCallStatusWatchBound'
+const CALL_MANAGER_INIT_TIMEOUT_MS = 25000
+const TUICALLKIT_BUILD_TAG = 'tuicallkit-debug-2026-04-18-1448'
 const debugLog = require('./debug-log')
 
 const LOADERS = [
@@ -10,13 +12,6 @@ const LOADERS = [
       const serviceModule = require('../TUICallKit/TUICallService/index')
       const managerModule = require('../TUICallKit/TUICallService/serve/callManager')
       return normalizeAdapter(serviceModule, managerModule, this.provider)
-    }
-  },
-  {
-    provider: '@trtc/calls-uikit-wx-npm',
-    load() {
-      const moduleExports = require('../miniprogram_npm/@trtc/calls-uikit-wx/index')
-      return normalizeAdapter(moduleExports, moduleExports, this.provider)
     }
   }
 ]
@@ -49,7 +44,7 @@ function pickValue(mod, candidates) {
 
 function normalizeAdapter(serviceModule, managerModule, provider) {
   const callAPI = pickValue(serviceModule, ['TUICallKitAPI', 'TUICallKitServer'])
-  const CallManagerCtor = pickValue(managerModule, ['CallManager']) || unwrapDefault(managerModule)
+  const rawCallManagerCtor = pickValue(managerModule, ['CallManager']) || unwrapDefault(managerModule)
   const TUIStore = pickValue(serviceModule, ['TUIStore'])
   const StoreName = pickValue(serviceModule, ['StoreName'])
   const NAME = pickValue(serviceModule, ['NAME'])
@@ -59,9 +54,9 @@ function normalizeAdapter(serviceModule, managerModule, provider) {
     throw new Error(`${provider} 未导出 TUICallKitAPI`)
   }
 
-  if (!CallManagerCtor) {
-    throw new Error(`${provider} 未导出 CallManager`)
-  }
+  const CallManagerCtor = typeof rawCallManagerCtor === 'function'
+    ? rawCallManagerCtor
+    : null
 
   return {
     provider,
@@ -76,7 +71,7 @@ function normalizeAdapter(serviceModule, managerModule, provider) {
 
 function buildMissingSDKError(loadErrors) {
   const detail = loadErrors.map(item => `${item.provider}: ${item.message}`).join('；')
-  return new Error(`未检测到官方 TUICallKit 组件。请在 miniprogram 目录执行 npm install @trtc/calls-uikit-wx，随后运行 npm run sync:tuicallkit，并在微信开发者工具执行“工具 -> 构建 npm”。如果已经构建过 npm，请重新编译后再试。${detail ? ` 诊断信息：${detail}` : ''}`)
+  return new Error(`未检测到官方 TUICallKit 源码目录。请确认 miniprogram/TUICallKit 已按官方 Demo 方式放入项目，并在小程序根目录提供 static/RTCCallEngine.wasm(.br) 资源，然后重新编译真机测试。${detail ? ` 诊断信息：${detail}` : ''}`)
 }
 
 function resolveAdapter() {
@@ -122,18 +117,106 @@ function invokeMaybePromise(target, methodName, args) {
   }
 }
 
-async function invokeWithPayloadVariants(target, methodName, payloadVariants) {
-  let lastError = null
+function withTimeout(promise, timeoutMs, timeoutMessage) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(timeoutMessage))
+    }, timeoutMs)
 
-  for (let i = 0; i < payloadVariants.length; i += 1) {
+    Promise.resolve(promise).then((result) => {
+      clearTimeout(timer)
+      resolve(result)
+    }).catch((err) => {
+      clearTimeout(timer)
+      reject(err)
+    })
+  })
+}
+
+async function initCallManagerWithVariants(adapter, runtime) {
+  const variants = [
+    {
+      label: 'object',
+      args: [{
+        sdkAppID: runtime.sdkAppId,
+        SDKAppID: runtime.sdkAppId,
+        userID: runtime.rtcUserId,
+        userSig: runtime.userSig,
+        globalCallPagePath: GLOBAL_CALL_PAGE_PATH
+      }]
+    }
+  ]
+
+  let lastError = null
+  for (let i = 0; i < variants.length; i += 1) {
+    const current = variants[i]
+    debugLog.info('tuicallkit', '尝试调用 CallManager.init', {
+      provider: adapter.provider,
+      variant: current.label,
+      rtcUserId: runtime.rtcUserId,
+      roomId: runtime.roomId
+    })
+
     try {
-      return await invokeMaybePromise(target, methodName, payloadVariants[i])
+      await withTimeout(
+        invokeMaybePromise(wx.CallManager, 'init', current.args),
+        CALL_MANAGER_INIT_TIMEOUT_MS,
+        `CallManager.init 超时（${current.label}）`
+      )
+      debugLog.info('tuicallkit', 'CallManager.init 调用完成', {
+        provider: adapter.provider,
+        variant: current.label
+      })
+      return
     } catch (err) {
       lastError = err
+      debugLog.warn('tuicallkit', 'CallManager.init 调用失败，准备尝试下一种签名', {
+        provider: adapter.provider,
+        variant: current.label,
+        message: err && err.message ? err.message : 'unknown'
+      })
     }
   }
 
-  throw lastError || new Error(`${methodName} 调用失败`)
+  throw lastError || new Error('CallManager.init 调用失败')
+}
+
+function getTUICallEngineInstance(adapter) {
+  const targets = [adapter && adapter.callAPI, wx.CallManager]
+
+  for (let i = 0; i < targets.length; i += 1) {
+    const current = targets[i]
+    if (current && typeof current.getTUICallEngineInstance === 'function') {
+      try {
+        const engine = current.getTUICallEngineInstance()
+        if (engine) {
+          return engine
+        }
+      } catch (err) {
+        // 继续尝试下一个兼容入口。
+      }
+    }
+  }
+
+  return null
+}
+
+function ensureEngineInstanceReady(adapter, runtime) {
+  const engine = getTUICallEngineInstance(adapter)
+  if (!engine) {
+    throw new Error(`TUICallKit 初始化后未获取到 TUICallEngine 实例，provider=${adapter.provider} rtcUserId=${runtime.rtcUserId}`)
+  }
+
+  if (typeof engine.deviceCheck !== 'function') {
+    throw new Error(`TUICallKit 初始化未完成，当前 TUICallEngine 缺少 deviceCheck，provider=${adapter.provider} rtcUserId=${runtime.rtcUserId}`)
+  }
+
+  debugLog.info('tuicallkit', '已确认 TUICallEngine 实例就绪', {
+    provider: adapter.provider,
+    rtcUserId: runtime.rtcUserId
+  })
+
+  return engine
 }
 
 async function ensureCallManager(runtime) {
@@ -147,7 +230,14 @@ async function ensureCallManager(runtime) {
   })
 
   if (!wx.CallManager || wx.__videoConsultCallProvider !== adapter.provider) {
+    if (!adapter.CallManagerCtor) {
+      throw new Error(`官方 TUICallKit 源码未导出 CallManager，provider=${adapter.provider}`)
+    }
+
     wx.CallManager = new adapter.CallManagerCtor()
+    debugLog.info('tuicallkit', '已按官方 Demo 方式创建 CallManager 实例', {
+      provider: adapter.provider
+    })
     wx.__videoConsultCallProvider = adapter.provider
     wx.__videoConsultCallIdentity = ''
   }
@@ -162,16 +252,8 @@ async function ensureCallManager(runtime) {
   }
 
   // 按腾讯云官方小程序 TUICallKit 接入方式，先通过 CallManager 完成登录初始化。
-  await invokeWithPayloadVariants(wx.CallManager, 'init', [
-    [{
-      sdkAppID: runtime.sdkAppId,
-      SDKAppID: runtime.sdkAppId,
-      userID: runtime.rtcUserId,
-      userSig: runtime.userSig,
-      globalCallPagePath: GLOBAL_CALL_PAGE_PATH
-    }],
-    [runtime.sdkAppId, runtime.rtcUserId, runtime.userSig]
-  ])
+  await initCallManagerWithVariants(adapter, runtime)
+  ensureEngineInstanceReady(adapter, runtime)
 
   bindSDKCallbacks(adapter)
   wx.__videoConsultCallIdentity = identityKey
@@ -457,23 +539,39 @@ async function startVideoCall(adapter, runtime) {
     peerUserId: runtime.peerUserId
   })
 
-  let callRejectedError = null
-  const callPromise = invokeWithPayloadVariants(adapter.callAPI, 'calls', [
-    [{
-      userIDList: [runtime.peerUserId],
-      type: VIDEO_CALL_TYPE,
-      roomID: runtime.roomId
-    }],
-    [{
-      userIDList: [runtime.peerUserId],
-      callMediaType: VIDEO_CALL_TYPE,
-      roomID: runtime.roomId
-    }],
-    [[runtime.peerUserId], VIDEO_CALL_TYPE, runtime.roomId]
-  ]).catch((err) => {
-    callRejectedError = err
-    throw err
+  // 当前小程序 npm 版 @trtc/calls-uikit-wx 的 calls() 明确要求：
+  // calls({ userIDList, type, roomID, ... })
+  // 这里不再继续尝试旧版 positional/兼容参数，避免把真实错误覆盖成
+  // “Cannot read properties of undefined (reading 'map')” 这种二次异常。
+  const callPayload = {
+    userIDList: [runtime.peerUserId],
+    type: VIDEO_CALL_TYPE,
+    roomID: runtime.roomId
+  }
+
+  debugLog.info('tuicallkit', '准备调用 SDK calls(object)', {
+    provider: adapter.provider,
+    payloadShape: {
+      hasUserIDList: Array.isArray(callPayload.userIDList),
+      userCount: callPayload.userIDList.length,
+      type: callPayload.type,
+      roomID: callPayload.roomID
+    }
   })
+
+  let callRejectedError = null
+  const callPromise = invokeMaybePromise(adapter.callAPI, 'calls', [callPayload])
+    .then((result) => {
+      debugLog.info('tuicallkit', 'SDK calls(object) 调用已返回', {
+        provider: adapter.provider,
+        resultType: typeof result
+      })
+      return result
+    })
+    .catch((err) => {
+      callRejectedError = err
+      throw err
+    })
 
   // 小程序真机上，官方 SDK 的 calls() 在拨号过程中可能长时间处于 pending，
   // 如果直接 await，会让医生页一直卡在“正在初始化 TUICallKit”。
@@ -511,6 +609,9 @@ async function enterConsultRoom(runtime) {
     throw new Error('RTC 参数不完整，请重新进入当前会话')
   }
 
+  debugLog.info('tuicallkit', '当前 TUICallKit 调试构建标识', {
+    buildTag: TUICALLKIT_BUILD_TAG
+  })
   debugLog.info('tuicallkit', '进入通话房间初始化开始', {
     role: runtime.role,
     sdkAppId: runtime.sdkAppId,

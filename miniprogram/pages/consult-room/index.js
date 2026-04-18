@@ -88,6 +88,28 @@ Page({
           : ''
       })
 
+      let connectedMessage = ''
+      if (runtime.role === 'doctor') {
+        const doctorToken = auth.getDoctorToken()
+        if (doctorToken && runtime.session && runtime.session.id) {
+          debugLog.info('consult-room', '医生端已进入有效通话状态，准备通知服务端启动录制', {
+            sessionId: runtime.session.id
+          })
+          const connectedResult = await consult.confirmConsultConnected(runtime.session.id, doctorToken)
+          connectedMessage = connectedResult && connectedResult.__message ? connectedResult.__message : ''
+          debugLog.info('consult-room', '服务端已确认通话建立', {
+            sessionId: runtime.session.id,
+            recordingStatus: connectedResult && connectedResult.recording_task ? connectedResult.recording_task.status : '',
+            message: connectedMessage
+          })
+        } else {
+          debugLog.warn('consult-room', '医生端缺少登录态或会话ID，跳过录制启动通知', {
+            hasDoctorToken: !!doctorToken,
+            sessionId: runtime.session && runtime.session.id ? runtime.session.id : 0
+          })
+        }
+      }
+
       debugLog.info('consult-room', 'TUICallKit 初始化完成', {
         role: runtime.role,
         provider: result.provider,
@@ -101,7 +123,7 @@ Page({
         customer: runtime.customer || null,
         sdkProvider: result.provider,
         statusText: runtime.role === 'doctor'
-          ? '医生端已发起视频呼叫，请关注顾客接听状态。'
+          ? (connectedMessage || '医生端已发起视频呼叫，请关注顾客接听状态。')
           : '顾客端已完成 TUICallKit 初始化，正在等待医生发起呼叫。',
         peerTitle: peerInfo.title,
         peerName: peerInfo.name

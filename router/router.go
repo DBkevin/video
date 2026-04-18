@@ -86,6 +86,7 @@ func NewRouter(cfg *config.Config, db *gorm.DB, rdb *redis.Client) *gin.Engine {
 		doctorConsultGroup.GET("/:id", consultController.GetConsultSession)
 		doctorConsultGroup.POST("/:id/share", consultController.ShareConsultSession)
 		doctorConsultGroup.POST("/:id/start", consultController.StartConsultSession)
+		doctorConsultGroup.POST("/:id/connected", consultController.ConfirmConsultConnected)
 		doctorConsultGroup.POST("/:id/finish", consultController.FinishConsultSession)
 		doctorConsultGroup.POST("/:id/cancel", consultController.CancelConsultSession)
 

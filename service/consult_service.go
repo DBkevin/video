@@ -116,6 +116,12 @@ type StartConsultSessionResult struct {
 	Message     string                `json:"-"`
 }
 
+type ConfirmConsultConnectedResult struct {
+	Session       *model.ConsultSession `json:"session"`
+	RecordingTask *RecordingTaskInfo    `json:"recording_task,omitempty"`
+	Message       string                `json:"-"`
+}
+
 type FinishConsultSessionResult struct {
 	Session *model.ConsultSession `json:"session"`
 	Record  *model.ConsultRecord  `json:"record,omitempty"`
@@ -530,7 +536,65 @@ func (s *ConsultService) StartConsultSession(ctx context.Context, sessionID, doc
 		RTC:         rtcInfo,
 		CurrentRole: "doctor",
 		Customer:    buildCustomerBasicInfo(session.CustomerID, &session.Customer),
-		Message:     s.startRecordingAfterConsultStart(ctx, session, message),
+		Message:     message,
+	}, nil
+}
+
+func (s *ConsultService) ConfirmConsultSessionConnected(ctx context.Context, sessionID, doctorID uint64) (*ConfirmConsultConnectedResult, error) {
+	session, err := s.sessionRepo.WithDB(s.db.WithContext(ctx)).GetByID(sessionID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, NewBizError(http.StatusNotFound, "面诊会话不存在")
+		}
+		return nil, err
+	}
+
+	if session.DoctorID != doctorID {
+		return nil, NewBizError(http.StatusForbidden, "当前医生无权确认该会话")
+	}
+
+	if err := s.touchSessionExpired(s.sessionRepo.WithDB(s.db.WithContext(ctx)), session); err != nil {
+		return nil, err
+	}
+
+	switch session.Status {
+	case model.ConsultSessionStatusCreated, model.ConsultSessionStatusShared, model.ConsultSessionStatusJoined:
+		return nil, NewBizError(http.StatusBadRequest, "当前会话尚未开始，不能确认通话建立")
+	case model.ConsultSessionStatusExpired:
+		return nil, NewBizError(http.StatusGone, "当前会话已过期，不能确认通话建立")
+	case model.ConsultSessionStatusCancelled:
+		return nil, NewBizError(http.StatusBadRequest, "当前会话已取消，不能确认通话建立")
+	case model.ConsultSessionStatusFinished:
+		return nil, NewBizError(http.StatusBadRequest, "当前会话已结束，不能确认通话建立")
+	}
+
+	message := "已确认通话建立"
+	if s.recordingService != nil {
+		if _, err := s.recordingService.CreateCloudRecordingForSession(ctx, session); err != nil {
+			message = fmt.Sprintf("%s，但云端录制启动失败：%s", message, err.Error())
+		} else {
+			message = fmt.Sprintf("%s，已自动启动云端录制", message)
+		}
+	}
+
+	recordingInfo, err := s.safeGetRecordingInfo(ctx, session.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	s.appendSessionLog(ctx, session.ID, model.SessionLogActorDoctor, doctorID, "doctor_confirm_call_connected", map[string]any{
+		"recording_status": func() string {
+			if recordingInfo == nil {
+				return ""
+			}
+			return recordingInfo.Status
+		}(),
+	})
+
+	return &ConfirmConsultConnectedResult{
+		Session:       session,
+		RecordingTask: recordingInfo,
+		Message:       message,
 	}, nil
 }
 
@@ -847,18 +911,6 @@ func (s *ConsultService) safeGetRecordingInfo(ctx context.Context, sessionID uin
 	}
 
 	return s.recordingService.GetRecordingInfo(ctx, sessionID)
-}
-
-func (s *ConsultService) startRecordingAfterConsultStart(ctx context.Context, session *model.ConsultSession, successMessage string) string {
-	if s.recordingService == nil || session == nil {
-		return successMessage
-	}
-
-	if _, err := s.recordingService.CreateCloudRecordingForSession(ctx, session); err != nil {
-		return fmt.Sprintf("%s，但云端录制启动失败：%s", successMessage, err.Error())
-	}
-
-	return fmt.Sprintf("%s，已自动启动云端录制", successMessage)
 }
 
 func (s *ConsultService) stopRecordingAfterConsultFinish(ctx context.Context, session *model.ConsultSession, successMessage string) string {
