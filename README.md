@@ -137,6 +137,18 @@ Vite 已默认代理 `/api` 到：
 VITE_PROXY_TARGET=http://你的后端地址 npm run dev
 ```
 
+如果要部署线上静态后台：
+
+```bash
+cd admin-web
+npm run build
+```
+
+- 当前默认构建目标路径是 `/admin/`
+- 也就是适配 `https://你的域名/admin/`
+- 把 `admin-web/dist` 交给 Nginx 托管即可
+- 如需改路径，可在构建前设置 `VITE_PUBLIC_BASE`
+
 ### 3. 启动小程序
 
 1. 微信开发者工具打开 `miniprogram/`

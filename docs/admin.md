@@ -38,6 +38,23 @@ npm run dev
 VITE_PROXY_TARGET=http://127.0.0.1:8080 npm run dev
 ```
 
+## 构建与部署
+
+```bash
+cd admin-web
+npm run build
+```
+
+说明：
+
+- 当前后台默认按 `https://你的域名/admin/` 构建
+- 构建产物中的静态资源会输出为 `/admin/assets/*`
+- 如果你要改成别的子路径，可在构建前设置：
+
+```bash
+VITE_PUBLIC_BASE=/你的路径/ npm run build
+```
+
 ## 登录
 
 接口：
