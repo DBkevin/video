@@ -1,0 +1,7 @@
+{
+    "component": true,
+    "usingComponents": {
+      "trtc-pusher": "@tencentcloud/trtc-component-wx/trtc-pusher",
+      "trtc-player": "@tencentcloud/trtc-component-wx/trtc-player"
+    }
+  }

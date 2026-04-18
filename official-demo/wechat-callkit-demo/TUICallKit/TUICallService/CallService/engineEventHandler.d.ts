@@ -1,0 +1,35 @@
+export default class EngineEventHandler {
+    static instance: EngineEventHandler;
+    private _callService;
+    constructor(options: any);
+    static getInstance(options: any): EngineEventHandler;
+    addListenTuiCallEngineEvent(): void;
+    removeListenTuiCallEngineEvent(): void;
+    private _callerChangeToConnected;
+    private _unNormalEventsManager;
+    private _handleError;
+    private _handleNewInvitationReceived;
+    private _handleOnCallBegin;
+    private _handleUserEnter;
+    private _handleUserLeave;
+    private _handleInviteeReject;
+    private _handleNoResponse;
+    private _handleLineBusy;
+    private _handleCallNotConnected;
+    private _handleOnUserInviting;
+    private _handleCallingEnd;
+    private _handleSDKReady;
+    private _handleKickedOut;
+    private _messageSentByMe;
+    private _handleCallMessage;
+    private _handleCallTypeChange;
+    private _handleNetworkQuality;
+    private _startRemoteView;
+    private _setRemoteUserInfoAudioVideoAvailable;
+    private _handleUserVideoAvailable;
+    private _handleUserAudioAvailable;
+    private _handleUserVoiceVolume;
+    private _handleDeviceUpdate;
+    private _handleUserUpdate;
+    private _addUserToRemoteUserInfoList;
+}

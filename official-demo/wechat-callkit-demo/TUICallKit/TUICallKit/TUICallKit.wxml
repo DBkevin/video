@@ -1,0 +1,36 @@
+<view wx:if="{{callStatus !== 'idle'}}" class="TUICall-container">
+  <SingleCall 
+      wx:if="{{!isGroupCall}}"
+      callRole="{{callRole}}"
+      callStatus ='{{callStatus}}'
+      pusher="{{pusher}}"
+      bigScreenUserId="{{bigScreenUserId}}"
+      playerList="{{playerList}}"
+      callDuration="{{callDuration}}"
+      callMediaType="{{callMediaType}}"
+      localUserInfo="{{localUserInfo}}"
+      remoteUserInfoList="{{remoteUserInfoList}}"
+      isEarPhone="{{isEarPhone}}"
+      enableFloatWindow="{{enableFloatWindow}}"
+      enableVirtualBackground="{{enableVirtualBackground}}"
+      isVirtualBackground="{{isVirtualBackground}}"
+      isClickable="{{isClickable}}"
+  ></SingleCall>
+  <GroupCall 
+      wx:if="{{isGroupCall}}"
+      callRole="{{callRole}}"
+      callStatus ='{{callStatus}}'
+      callMediaType="{{callMediaType}}"
+      callDuration="{{callDuration}}"
+      pusher="{{pusher}}"
+      playerList="{{playerList}}"
+      localUserInfo="{{localUserInfo}}"
+      callerUserInfo="{{callerUserInfo}}"
+      remoteUserInfoList="{{remoteUserInfoList}}"
+      playerProcess="{{playerProcess}}"
+      isEarPhone="{{isEarPhone}}"
+      enableVirtualBackground="{{enableVirtualBackground}}"
+      isVirtualBackground="{{isVirtualBackground}}"
+      isClickable="{{isClickable}}"
+  ></GroupCall>
+</view>

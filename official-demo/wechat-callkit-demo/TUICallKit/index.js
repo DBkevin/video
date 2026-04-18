@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.LayoutMode = exports.FeatureButton = exports.uiDesign = exports.t = exports.Version = exports.VideoDisplayMode = exports.VideoResolution = exports.CallMediaType = exports.CallRole = exports.STATUS = exports.NAME = exports.TUICallKitAPI = exports.StoreName = exports.TUIStore = exports.TUIGlobal = void 0;
+const index_1 = require("./TUICallService/index");
+Object.defineProperty(exports, "TUIGlobal", { enumerable: true, get: function () { return index_1.TUIGlobal; } });
+Object.defineProperty(exports, "TUIStore", { enumerable: true, get: function () { return index_1.TUIStore; } });
+Object.defineProperty(exports, "StoreName", { enumerable: true, get: function () { return index_1.StoreName; } });
+Object.defineProperty(exports, "TUICallKitAPI", { enumerable: true, get: function () { return index_1.TUICallKitAPI; } });
+Object.defineProperty(exports, "NAME", { enumerable: true, get: function () { return index_1.NAME; } });
+Object.defineProperty(exports, "STATUS", { enumerable: true, get: function () { return index_1.StatusChange; } });
+Object.defineProperty(exports, "CallRole", { enumerable: true, get: function () { return index_1.CallRole; } });
+Object.defineProperty(exports, "CallMediaType", { enumerable: true, get: function () { return index_1.CallMediaType; } });
+Object.defineProperty(exports, "VideoResolution", { enumerable: true, get: function () { return index_1.VideoResolution; } });
+Object.defineProperty(exports, "VideoDisplayMode", { enumerable: true, get: function () { return index_1.VideoDisplayMode; } });
+Object.defineProperty(exports, "t", { enumerable: true, get: function () { return index_1.t; } });
+Object.defineProperty(exports, "uiDesign", { enumerable: true, get: function () { return index_1.uiDesign; } });
+Object.defineProperty(exports, "FeatureButton", { enumerable: true, get: function () { return index_1.FeatureButton; } });
+Object.defineProperty(exports, "LayoutMode", { enumerable: true, get: function () { return index_1.LayoutMode; } });
+const Version = '4.2.11'; // basic-demo 原来上报使用
+exports.Version = Version;

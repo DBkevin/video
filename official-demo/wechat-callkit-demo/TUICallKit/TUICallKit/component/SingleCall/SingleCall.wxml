@@ -1,0 +1,179 @@
+<!-- 音频通话 -->
+<view class="{{callMediaType === 1?'audio-call':'invite-call' }} transition-animation">
+  <!-- 顶部菜单栏 -->
+  <view wx:if="{{pictureMode === 'pop' && enableFloatWindow}}" class="topBar">
+    <image catch:tap="toggleMinimize" src="{{callMediaType === 1 ? IMG_MINIMIZE_BLACK : IMG_MINIMIZE_WHITE}}" />
+  </view>
+  <!-- 本地流 -->
+  <view class="{{callMediaType === 1 ? 'pusher-audio' : (bigScreenUserId || callStatus === 'calling'  ? 'pusher-video' : 'player')}}" data-screen="pusher" catch:tap="toggleViewSize">
+    <trtc-pusher class="{{callMediaType === 1?'pusher-audio':'live'}}" pictureInPictureMode="{{pictureMode}}" bindstatechange="pusherStateChangeHandler" />
+  </view>
+  <!-- 远端流 -->
+  <view wx:for="{{remoteUserInfoList}}" wx:key="userId" class="view-container player-container" catch:tap="toggleViewSize">
+    <view class="{{callMediaType === 1 ? 'player-audio' : (!bigScreenUserId ? 'pusher-video' : 'player')}}" data-screen="player">
+      <trtc-player wx:if="{{ enableFloatWindow ? item.isVideoAvailable : (item.isAudioAvailable || item.isVideoAvailable)}}" class="live" streamId="{{item.userId + '_0'}}" bindstatechange="playerStateChange" />
+    </view>
+  </view>
+  <!-- 语言通话邀请信息 -->
+  <view wx:if="{{callMediaType === 1}}" class="invite-calling-single">
+    <image class="avatar" src="{{remoteUserInfoList[0].avatar || IMG_DEFAULT_AVATAR}}" id="{{remoteUserInfoList[0].userId}}" binderror="handleErrorImage" />
+    <view class="tips">{{remoteUserInfoList[0].displayUserInfo}}</view>
+    <view wx:if="{{callRole === 'caller' && callStatus === 'calling' }}" class="tips-subtitle">等待对方接受</view>
+  </view>
+  <!-- 视频通话邀请信息 -->
+  <view wx:if="{{callStatus === 'calling' && callMediaType === 2}}" class="invite-calling">
+    <view class="invite-calling-header">
+      <view class="invite-calling-header-right">
+        <view class="invite-calling-header-message">
+          <label class="tips">
+            {{remoteUserInfoList[0].displayUserInfo}}
+          </label>
+          <text class="tips-subtitle" wx:if="{{callRole !== 'caller'}}">邀请你视频通话</text>
+          <text class="tips-subtitle" wx:else>等待对方接受</text>
+        </view>
+        <image class="avatar" src="{{remoteUserInfoList[0].avatar || IMG_DEFAULT_AVATAR}}" id="{{remoteUserInfoList[0].userId}}" binderror="handleErrorImage" />
+      </view>
+    </view>
+  </view>
+  <!-- 语音通话呼叫状态按钮 -->
+  <view wx:if="{{callStatus === 'calling' && callMediaType === 1}}" class="footer">
+    <view wx:if="{{callRole !== 'caller'}}" class="btn-operate">
+      <view class="button-container">
+        <view class="call-operate" style="background-color: red" catch:tap="reject">
+          <image src="{{IMG_HANGUP}}" />
+        </view>
+        <view style="margin-top:10px">挂断</view>
+      </view>
+      <view class="button-container">
+        <view class="call-operate" catch:tap="accept">
+          <image src="{{IMG_ACCEPT}}" />
+        </view>
+        <view style="margin-top:10px">接听</view>
+      </view>
+    </view>
+    <view wx:if="{{callRole === 'caller'}}" class="btn-operate">
+      <view class="button-container">
+        <view class="call-operate" style="background-color: #fa585e" catch:tap="hangup">
+          <image wx:if="{{isClickable}}" src="{{IMG_HANGUP}}" />
+          <image class="image-loading" wx:else src="{{IMG_LOADING}}" />
+        </view>
+        <view style="margin-top:10px">挂断</view>
+      </view>
+    </view>
+  </view>
+  <!-- 视频通话呼叫状态按钮 -->
+  <view wx:if="{{callStatus === 'calling' && callMediaType === 2}}" class="invite-calling">
+    <view class="footer">      
+      <!-- 主叫按钮 -->
+      <view class="btn-operate" wx:if="{{callRole === 'caller'}}">
+        <view class="btn-operate-item">
+          <view class="btn-container">
+            <view wx:if="{{enableVirtualBackground}}" class="btn-virtualBackground">
+              <image src="{{IMG_VIRTUALBACKGROUND_MINI}}" catch:tap="setBlurBackground" />
+            </view>
+            <view class="call-operate" catch:tap="hangup" style="background-color: #fa585e">
+                <image wx:if="{{isClickable}}" src="{{IMG_HANGUP}}" />
+                <image class="image-loading" wx:else src="{{IMG_LOADING}}" />
+            </view>
+            <view class="invite-calling-header-left">
+              <image src="{{IMG_SWITCH_CAMERA}}" data-device="{{pusher.frontCamera}}" catch:tap="switchCamera" />
+            </view>
+          </view>
+          <text>挂断</text>
+        </view>
+      </view>
+      <!-- 被叫按钮 -->
+      <view class="btn-operate" wx:if="{{callRole !== 'caller' && enableVirtualBackground}}">
+        <view class="btn-operate-item" catch:tap="setBlurBackground">
+          <view class="call-operate">
+            <image src="{{isVirtualBackground ? IMG_VIRTUALBACKGROUND_OPEN : IMG_VIRTUALBACKGROUND_CLOSE}}" />
+          </view>
+        </view>
+      </view>
+      <view class="btn-operate" wx:if="{{callRole !== 'caller'}}">
+        <view class="btn-operate-item">
+          <view class="call-operate" style="background-color: red" catch:tap="reject">
+            <image src="{{IMG_HANGUP}}" />
+          </view>
+          <text>挂断</text>
+        </view>
+        <view class="btn-operate-item">
+          <view class="call-operate" catch:tap="accept">
+            <image src="{{IMG_ACCEPT}}" />
+          </view>
+          <text>接听</text>
+        </view>
+      </view>
+    </view>
+  </view>
+  <!-- 语音通话接通状态按钮 -->
+  <view wx:if="{{callStatus === 'connected' && callMediaType === 1}}" class="handle-btns">
+    <view class="other-view black">
+      <text>{{callDuration}}</text>
+    </view>
+    <view class="btn-list">
+      <view class="button-container">
+        <view class="btn-normal" bindtap="microPhoneHandler">
+          <image class="btn-image" src="{{localUserInfo.isAudioAvailable? IMG_AUDIO_TRUE: IMG_AUDIO_FALSE}} "></image>
+        </view>
+        <view>麦克风</view>
+      </view>
+      <view class="button-container">
+        <view class="btn-hangup" bindtap="hangup">
+          <image class="btn-image" src="{{IMG_HANGUP}}"></image>
+        </view>
+        <view>挂断</view>
+      </view>
+      <view class="button-container">
+        <view class="btn-normal" bindtap="toggleSoundMode">
+          <image class="btn-image" src="{{isEarPhone ? IMG_SPEAKER_FALSE: IMG_SPEAKER_TRUE}} "></image>
+        </view>
+        <text>扬声器</text>
+      </view>
+    </view>
+  </view>
+  <!-- 视频通话接听状态按钮 -->
+  <view wx:if="{{callStatus === 'connected' && callMediaType === 2}}" class="invite-calling">
+    <view class="handle-btns">
+      <view class="other-view white">
+        <text>{{callDuration}}</text>
+      </view>
+      <view class="btn-list">
+        <view class="button-container" bindtap="microPhoneHandler">
+          <view class="btn-normal">
+            <image class="btn-image" src="{{localUserInfo.isAudioAvailable? IMG_AUDIO_TRUE: IMG_AUDIO_FALSE}} "></image>
+          </view>
+          <view class="white">麦克风</view>
+        </view>
+        <view class="button-container" bindtap="toggleSoundMode">
+          <view class="btn-normal">
+            <image class="btn-image" src="{{isEarPhone ? IMG_SPEAKER_FALSE: IMG_SPEAKER_TRUE}} "></image>
+          </view>
+          <text class="white">扬声器</text>
+        </view>
+        <view class="button-container" bindtap="cameraHandler">
+          <view class="btn-normal">
+            <image class="btn-image" src="{{localUserInfo.isVideoAvailable ? IMG_CAMERA_TRUE: IMG_CAMERA_FALSE}} "></image>
+          </view>
+          <text class="white">摄像头</text>
+        </view>
+      </view>
+      <view class="btn-list">
+        <view class="btn-list-item other-view">
+          <view class="btn-container">
+            <view wx:if="{{enableVirtualBackground}}" class="btn-virtualBackground-caller-connected">
+              <image src="{{IMG_VIRTUALBACKGROUND_MINI}}" catch:tap="setBlurBackground" />
+            </view>
+            <view class="btn-hangup" bindtap="hangup">
+              <image class="btn-image" src="{{IMG_HANGUP}}"></image>
+            </view>
+            <view wx:if="{{localUserInfo.isVideoAvailable}}" class="invite-calling-connected">
+              <image src="{{IMG_SWITCH_CAMERA}}" data-device="{{pusher.frontCamera}}" catch:tap="switchCamera" />
+            </view>
+          </view>
+          <text class="white">挂断</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

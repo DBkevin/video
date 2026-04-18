@@ -1,0 +1,552 @@
+.topBar image{
+  width: 24px;
+  height: 24px;
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  z-index: 102;
+}
+
+.footer {
+  position: absolute;
+  bottom: 5vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.button-container {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.btn-operate {
+  display: flex;
+  justify-content: space-between;
+  z-index: 9999;
+}
+
+.btn-operate-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn-operate-item text {
+  font-size: 14px;
+  color: #f0e9e9;
+  padding: 5px;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.call-switch text {
+  padding: 5px;
+  color: #f0e9e9;
+  font-size: 14px;
+}
+
+.call-operate {
+  width: 8vh;
+  height: 8vh;
+  border-radius: 8vh;
+  margin: 0 15vw;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.call-operate .image-loading{
+  width: 36px;
+  height: 36px;
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.call-switch .call-operate {
+  width: 4vh;
+  height: 3vh;
+}
+
+.call-operate image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.tips {
+  font-size: 20px;
+  color: #ffffff;
+  letter-spacing: 0;
+  margin: 0 auto;
+  /* text-shadow: 0 1px 2px rgba(0,0,0,0.40); */
+  font-weight: 600;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tips-subtitle {
+  font-family: PingFangSC-Regular;
+  font-size: 14px;
+  color: #ffffff;
+  letter-spacing: 0;
+  text-align: right;
+  /* text-shadow: 0 1px 2px rgba(0,0,0,0.30); */
+  font-weight: 400;
+}
+
+.invite-call {
+  position: absolute;
+  top: 0;
+  z-index: 100;
+  width: 100vw;
+  height: 100vh;
+  background-color: black;
+}
+
+.transition-animation {
+  transform: translateY(-100%);
+  animation: slideInDown 0.5s ease forwards;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.invite-call .local-video {
+  width: 100vw;
+  height: 100vh;
+}
+.invite-call .invite-calling {
+  position: absolute;
+  top: 0;
+  z-index: 101;
+  width: 100vw;
+  height: 100vh;
+}
+.invite-calling-header {
+  margin-top: 107px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px;
+}
+.btn-virtualBackground {
+  position: absolute;
+  left: 0;
+}
+.btn-virtualBackground image{
+  width: 32px;
+  height: 32px;
+}
+.btn-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.invite-calling-header-left {
+  position: absolute;
+  right: 0;
+}
+.invite-calling-header-left image {
+  width: 32px;
+  height: 32px;
+}
+.invite-calling-header-right {
+  display: flex;
+  align-items: center;
+}
+.invite-calling-header-message {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+}
+.invite-calling-header-right image {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+}
+.invite-calling .footer {
+  position: absolute;
+  bottom: 5vh;
+  width: 100%;
+}
+.invite-calling .btn-operate {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.trtc-calling {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  z-index: 99;
+}
+
+.audio-call {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  z-index: 100;
+  background: #ffffff;
+}
+.audio-call > .btn-operate {
+  display: flex;
+  justify-content: center;
+}
+
+.audio-call > image {
+  width: 40vw;
+  height: 40vw;
+  display: block;
+  margin: 20vw 30vw;
+  margin-top: 40vw;
+}
+
+.invite-calling-single > image {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  display: block;
+  margin: 140px auto 15px;
+  /* margin: 20vw 30vw; */
+}
+
+.invite-calling-single .tips {
+  width: 100%;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  font-size: 20px;
+  color: #333333;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+.invite-calling-single .tips-subtitle {
+  height: 20px;
+  font-family: PingFangSC-Regular;
+  font-size: 14px;
+  color: #97989c;
+  letter-spacing: 0;
+  font-weight: 400;
+  text-align: center;
+}
+
+.invite-calling-list {
+  justify-content: flex-start;
+}
+
+.invite-calling-item {
+  position: relative;
+  margin: 0 12px;
+}
+.invite-calling-item image {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+}
+.invite-calling-item-message {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.5);
+  width: 100px;
+  height: 100px;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar {
+  background: #dddddd;
+}
+
+.player {
+  position: absolute;
+  right: 16px;
+  top: 107px;
+  width: 100px;
+  height: 178px;
+  z-index: 999;
+  background-color: #000000;
+}
+
+.pusher-video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.stream-box {
+  position: relative;
+  float: left;
+  width: 50vw;
+  height: 260px;
+  /* background-color: #f75c45; */
+  z-index: 3;
+}
+
+.handle-btns {
+  position: absolute;
+  bottom: 44px;
+  width: 100vw;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+}
+
+.handle-btns .btn-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.btn-normal {
+  width: 8vh;
+  height: 8vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  /* background: white; */
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.btn-image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.btn-hangup {
+  width: 8vh;
+  height: 8vh;
+  /*background: #f75c45;*/
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.btn-hangup > .btn-image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.TRTCCalling-call-audio {
+  width: 100%;
+  height: 100%;
+}
+
+.btn-footer {
+  position: relative;
+}
+
+.btn-footer .multi-camera {
+  width: 32px;
+  height: 32px;
+}
+
+.btn-footer .camera {
+  width: 64px;
+  height: 64px;
+  position: fixed;
+  left: 16px;
+  top: 107px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.btn-footer .camera .camera-image {
+  width: 32px;
+  height: 32px;
+}
+
+.TUICalling-connected-layout {
+  width: 100%;
+  height: 100%;
+}
+
+.audio {
+  padding-top: 15vh;
+  background: #ffffff;
+}
+
+.pusher-audio {
+  width: 1px;
+  height: 1px;
+  z-index: -1;
+}
+
+.player-audio {
+  width: 0;
+  height: 0;
+}
+
+.live {
+  width: 100%;
+  height: 100%;
+}
+
+.other-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 18px;
+  letter-spacing: 0;
+  font-weight: 400;
+  padding: 16px;
+}
+
+.white {
+  color: #f0e9e9;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.black {
+  color: #000000;
+  padding: 5px;
+}
+
+.TRTCCalling-call-audio-box {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.mutil-img {
+  justify-content: flex-start !important;
+}
+
+.TRTCCalling-call-audio-img {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.TRTCCalling-call-audio-img > image {
+  width: 25vw;
+  height: 25vw;
+  margin: 0 4vw;
+  border-radius: 4vw;
+  position: relative;
+}
+
+.TRTCCalling-call-audio-img text {
+  font-size: 20px;
+  color: #333333;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.btn-list-item {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.btn-image-small {
+  transform: scale(0.7);
+}
+
+.avatar {
+  background: #dddddd;
+}
+
+.btn-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.btn-virtualBackground-caller-connected {
+  position: absolute;
+  left: -88px;
+}
+
+.btn-virtualBackground-caller-connected image{
+  width: 32px;
+  height: 32px;
+}
+
+.invite-calling-connected {
+  position: absolute;
+  right: -88px;
+}
+
+.invite-calling-connected image {
+  width: 32px;
+  height: 32px;
+}
+
+.call-switch .call-operate {
+  width: 4vh;
+  height: 3vh;
+}
+
+.call-operate image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.call-switch text {
+  padding: 0;
+  font-size: 14px;
+}
+
+.btn-operate-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn-operate-item text {
+  padding: 8px 0;
+  font-size: 18px;
+  color: #ffffff;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 14px;
+}

@@ -1,0 +1,42 @@
+{
+  "name": "@trtc/calls-uikit-wx",
+  "version": "4.2.11",
+  "main": "./index.js",
+  "module": "./index.js",
+  "types": "./index.d.ts",
+  "description": "An Open-source Voice & Video Calling UI Component Based on Tencent Cloud Service.",
+  "homepage": "https://cloud.tencent.com/document/product/647/78912",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tencentyun/TUICallKit/tree/main/uni-app/TUICallKit-Miniprogram",
+    "directory": "Web"
+  },
+  "dependencies": {
+    "@tencentcloud/tui-core-lite": "~1.0.0",
+    "@tencentcloud/trtc-component-wx": "^1.0.7",
+    "aegis-mp-sdk": "latest",
+    "@trtc/call-engine-lite-wx": "~3.4.10"
+  },
+  "bugs": {
+    "url": "https://github.com/tencentyun/TUICallKit/issues"
+  },
+  "keywords": [
+    "uikit",
+    "call",
+    "vue3",
+    "tencent",
+    "chat",
+    "vue",
+    "vue2",
+    "video",
+    "audio",
+    "voice",
+    "callkit",
+    "璇煶",
+    "瑙嗛",
+    "鐢佃瘽",
+    "閫氳瘽",
+    "@trtc/calls-uikit-wx"
+  ]
+}

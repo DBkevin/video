@@ -1,0 +1,780 @@
+.transition-animation {
+  transform: translateY(-100%);
+  animation: slideInDown 0.5s ease forwards;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.footer {
+  position: absolute;
+  bottom: 5vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.btn-operate {
+  display: flex;
+  justify-content: space-between;
+}
+
+.btn-operate-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn-operate-item text {
+  font-size: 14px;
+  color: #f0e9e9;
+  padding: 5px;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+
+.call-switch text {
+  padding: 5px;
+  color: #f0e9e9;
+  font-size: 14px;
+}
+
+.call-operate {
+  width: 8vh;
+  height: 8vh;
+  border-radius: 8vh;
+  margin: 0 15vw;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.call-operate .image-loading{
+  width: 36px;
+  height: 36px;
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.call-switch .call-operate {
+  width: 4vh;
+  height: 3vh;
+}
+
+.call-operate image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.tips {
+  font-size: 20px;
+  color: #ffffff;
+  letter-spacing: 0;
+  margin: 0 auto;
+  font-weight: 600;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tips-subtitle {
+  font-family: PingFangSC-Regular;
+  font-size: 14px;
+  color: #ffffff;
+  letter-spacing: 0;
+  text-align: right;
+  font-weight: 400;
+}
+
+.invite-call {
+  position: absolute;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  height: 187px;
+}
+
+.invite-call .local-video {
+  width: 100px;
+  height: 187px;
+}
+
+.invite-call .invite-calling {
+  position: absolute;
+  top: 0;
+  z-index: 101;
+  width: 100vw;
+  height: 100vh;
+}
+
+.invite-calling-header {
+  margin-top: 107px;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 16px;
+}
+
+.btn-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.btn-virtualBackground {
+  position: absolute;
+  left: -88px;
+  width: 32px;
+  height: 32px;
+}
+.btn-virtualBackground image{
+  width: 32px;
+  height: 32px;
+}
+
+.invite-calling-header-left {
+  position: absolute;
+  right: 0;
+}
+
+.invite-calling-header-left image {
+  width: 32px;
+  height: 32px;
+}
+
+.invite-calling-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.invite-calling-header-message {
+  display: flex;
+  flex-direction: column;
+  padding: 0 16px;
+}
+
+.invite-calling-header-right image {
+  width: 100px;
+  height: 100px;
+  border-radius: 12px;
+}
+
+.invite-calling .footer {
+  position: absolute;
+  bottom: 5vh;
+  width: 100%;
+}
+
+.invite-calling .btn-operate {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.hidden {
+  display: none;
+}
+
+.trtc-calling {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  z-index: 99;
+}
+
+.audio-call {
+  width: 100vw;
+  height: 100vh;
+  position: absolute;
+  top: 0;
+  z-index: 100;
+  background: #ffffff;
+}
+
+.audio-call > .btn-operate {
+  display: flex;
+  justify-content: center;
+}
+
+.audio-call > image {
+  width: 40vw;
+  height: 40vw;
+  display: block;
+  margin: 20vw 30vw;
+  margin-top: 40vw;
+}
+
+.invite-calling-single > image {
+  width: 120px;
+  height: 120px;
+  border-radius: 12px;
+  display: block;
+  margin: 120px auto 15px;
+}
+
+.invite-calling-single .tips {
+  width: 100%;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  font-size: 20px;
+  color: #333333;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.invite-calling-single .tips-subtitle {
+  height: 20px;
+  font-family: PingFangSC-Regular;
+  font-size: 14px;
+  color: #97989c;
+  letter-spacing: 0;
+  font-weight: 400;
+  text-align: center;
+}
+
+.swiper {
+  margin-top: 107px;
+  min-height: 374px;
+}
+
+.invite-calling-list {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.invite-calling-item {
+  flex: 0.5;
+  min-width: 50%;
+  height: 187px;
+  position: relative;
+}
+
+.invite-calling-item image {
+  width: 100%;
+  height: 100%;
+}
+
+.invite-calling-item-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  float: left;
+  background: rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+.invite-calling-item-loadimg {
+  position: absolute;
+  left: calc(50% - 20px);
+  top: calc(50% - 20px);
+  width: 40px;
+  height: 40px;
+  -webkit-transform: rotate(360deg);
+  animation: rotation 2s linear infinite;
+  -moz-animation: rotation 2s linear infinite;
+  -webkit-animation: rotation 2s linear infinite;
+  -o-animation: rotation 2s linear infinite;
+}
+
+@-webkit-keyframes rotation {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+.invite-calling-item-loadimg image {
+  width: 100%;
+  height: 100%;
+}
+
+.invite-calling-item-id {
+  position: absolute;
+  left: 2%;
+  bottom: 2%;
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.avatar {
+  background-color: black;
+}
+
+/* 被叫者 */
+.invite-txt {
+  width: 126px;
+  height: 20px;
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  font-size: 14px;
+  color: #333333;
+  letter-spacing: 0;
+  margin: 16px auto 60px auto;
+}
+
+.invite-other-txt {
+  width: 112px;
+  height: 20px;
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  font-size: 14px;
+  color: #333333;
+  letter-spacing: 0;
+  margin: 0 auto 24px auto;
+}
+
+.invite-other-list {
+  position: absolute;
+  left: 14vw;
+  margin-top: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  width: 272px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.invite-other-item {
+  flex: 0.25;
+  text-align: center;
+  max-width: 64px;
+  margin: 2px;
+}
+
+.invite-other-item image {
+  border-radius: 10%;
+  max-width: 64px;
+  height: 64px;
+}
+
+.invite-other-item-name {
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  font-size: 12px;
+  color: #666666;
+  letter-spacing: 0;
+  line-height: 18px;
+}
+
+/* 全屏设置 */
+.TUICalling-connected-layout {
+  width: 100%;
+  height: 100%;
+}
+
+.TUICalling-connected-video {
+  width: 100%;
+  height: 180%;
+}
+
+/* 本地音频 */
+.stream-box {
+  float: left;
+  width: 187px;
+  height: 187px;
+  position: absolute;
+  top: 13vh;
+}
+
+/* 远端音频列表 */
+.swiper {
+  margin-top: 107px;
+  min-height: 374px;
+}
+
+.invite-calling-list {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.invite-calling-item {
+  flex: 0.5;
+  min-width: 50%;
+  height: 187px;
+  position: relative;
+}
+
+.invite-calling-item image {
+  width: 100%;
+  height: 100%;
+}
+
+/* 本地视频 */
+.play-item {
+  width: 100%;
+  height: 187px;
+  position: relative;
+  background-color: #000000;
+}
+
+.pusher-ownvideo {
+  width: 100%;
+  height: 100%;
+}
+
+/* 远端视频列表 */
+.swiper-list {
+  min-height: 189px;
+}
+
+.player-list {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: center;
+}
+
+.player-item {
+  flex: 0.5;
+  min-width: 50%;
+  min-height: 187px;
+}
+
+/* 音量图标 */
+.player-control {
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 0 6px 6px 0;
+  color: #fff;
+  z-index: 999;
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  display: flex;
+  align-items: center;
+  height: 32px;
+  max-width: 50%;
+  z-index: 99;
+}
+
+.player-control image {
+  width: 32px;
+  height: 32px;
+}
+
+.player-control .name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-left: 10px;
+  margin-right: 10px;
+  flex: 1;
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.control-buttons {
+  display: flex;
+}
+
+.icon-button {
+  margin-right: 10px;
+}
+
+/* 菜单 */
+.handle-btns {
+  position: absolute;
+  bottom: 44px;
+  width: 100vw;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+}
+
+.handle-btns .btn-list {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+}
+
+.btn-normal {
+  width: 8vh;
+  height: 8vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  /* background: white; */
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.btn-image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.btn-hangup {
+  width: 8vh;
+  height: 8vh;
+  /*background: #f75c45;*/
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+}
+
+.btn-hangup > .btn-image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.TRTCCalling-call-audio {
+  width: 100%;
+  height: 100%;
+}
+
+.btn-footer {
+  position: relative;
+}
+
+.btn-footer .multi-camera {
+  width: 32px;
+  height: 32px;
+}
+
+.btn-footer .camera {
+  width: 64px;
+  height: 64px;
+  position: fixed;
+  left: 16px;
+  top: 107px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.btn-footer .camera .camera-image {
+  width: 32px;
+  height: 32px;
+}
+
+.audio {
+  padding-top: 15vh;
+  background: #ffffff;
+}
+
+.pusher-audio {
+  width: 0;
+  height: 0;
+}
+
+.player-audio {
+  width: 0;
+  height: 0;
+}
+
+.other-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 18px;
+  letter-spacing: 0;
+  font-weight: 400;
+  padding: 16px;
+}
+
+.white {
+  font-weight: 400;
+  font-size: 14px;
+  color: #666666;
+  padding: 5px;
+}
+
+.black {
+  color: #000000;
+  padding: 5px;
+}
+
+.TRTCCalling-call-audio-box {
+  margin-top: 100px;
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: center;
+}
+
+.TRTCCalling-calling-list {
+  flex: 0.5;
+  /*设置最小宽度，才会让元素排不下，导致换行排列*/
+  min-width: 50%;
+  min-height: 187px;
+  position: relative;
+}
+
+.TRTCCalling-calling-list image {
+  width: 100%;
+  height: 100%;
+}
+
+.TRTCCalling-calling-item-id {
+  position: absolute;
+  left: 2%;
+  bottom: 2%;
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.btn-list-item {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.btn-image-small {
+  transform: scale(0.7);
+}
+
+.avatar {
+  background: #dddddd;
+}
+
+.btn-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.invite-calling-header-left {
+  position: absolute;
+  right: -88px;
+}
+
+.invite-calling-header-left image {
+  width: 32px;
+  height: 32px;
+}
+
+.call-switch .call-operate {
+  width: 4vh;
+  height: 3vh;
+}
+
+.call-operate image {
+  width: 100%;
+  height: 100%;
+  background: none;
+}
+
+.call-switch text {
+  padding: 0;
+  font-size: 14px;
+}
+
+.btn-operate-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btn-operate-item text {
+  padding: 8px 0;
+  font-size: 18px;
+  color: #666666;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-size: 14px;
+}
+
+.invite-calling-item-message {
+  position: absolute;
+  top: 0;
+  left: 0;
+  float: left;
+  background: rgba(0, 0, 0, 0.6);
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+}
+
+.invite-calling-item-loadimg {
+  position: absolute;
+  left: calc(50% - 20px);
+  top: calc(50% - 20px);
+  width: 40px;
+  height: 40px;
+  -webkit-transform: rotate(360deg);
+  animation: rotation 2s linear infinite;
+  -moz-animation: rotation 2s linear infinite;
+  -webkit-animation: rotation 2s linear infinite;
+  -o-animation: rotation 2s linear infinite;
+}
+
+@-webkit-keyframes rotation {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+
+  to {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+.invite-calling-item-loadimg image {
+  width: 100%;
+  height: 100%;
+}
+
+.invite-calling-item-id {
+  position: absolute;
+  left: 2%;
+  bottom: 2%;
+  font-family: PingFangSC-Regular;
+  font-weight: 400;
+  font-size: 12px;
+  color: #ffffff;
+}

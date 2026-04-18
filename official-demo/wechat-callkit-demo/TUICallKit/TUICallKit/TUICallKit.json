@@ -1,0 +1,9 @@
+{
+  "component": true,
+  "usingComponents": {
+    "SingleCall":"./component/SingleCall/SingleCall",
+    "GroupCall":"./component/GroupCall/GroupCall"
+  },
+  "navigationStyle": "custom",
+  "disableScroll": true
+}
